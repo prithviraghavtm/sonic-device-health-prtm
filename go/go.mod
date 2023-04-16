@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.5.1 // Used for mocking and assertions in UTs
 )
 
 require (
