@@ -97,9 +97,9 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
         assert.Equal(uint64(312), result[ethernet3]["OutUnicastPackets"], "Ehternet3's OutUnicastPackets counter is expected to be 312")
 }
 
-/*
 func Test_GetInterfaceCounters_ReturnsErrorWhenHGetAllMethodFails(t *testing.T) {
-        mockRedisProvider := new(MockRedisProvider)
+        interfaceToOidMapping = nil
+	mockRedisProvider := new(MockRedisProvider)
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Return((map[string]string)(nil), errors.New("Error fetching data from redis."))
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
@@ -108,7 +108,6 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHGetAllMethodFails(t *testing.T) 
         }
         assert.NotEqual(t, nil, err, "err is exptected to be non nil")
 }
-*/
 
 func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
         mockRedisProvider := new(MockRedisProvider)

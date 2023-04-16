@@ -8,15 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
-func init() {
-	client := redis.NewClient(&redis.Options{
-		Addr: ":6379",
-	})
-	dbToRedisClientMapping[2] = client
-}
-*/
-
 func mockHmGetFunction(redisClient *redis.Client, key string, fields []string) ([]interface{}, error) {
 	if key == "hmget_scenario1_key" {
 		str := []string{"111", "222", "333"}
@@ -24,7 +15,7 @@ func mockHmGetFunction(redisClient *redis.Client, key string, fields []string) (
 		return counters, nil
 	} else if key == "hmget_scenario2_key" {
 		return nil, errors.New("HmGet scenario2_key error")
-	}
+	} 
 	return nil, nil
 }
 
@@ -71,6 +62,14 @@ func Test_RedisProvider_HGetAllReturnsError_ForInvalidDatabaseId(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal((map[string]string)(nil), result, "Result is expected to be non nil")
 	assert.NotEqual(nil, err, "err is expected to be non-nil")
+
+	result, err = redisProvider.HGetAll(21, "any_key")
+	assert.Equal((map[string]string)(nil), result, "Result is expected to be non nil")
+	assert.NotEqual(nil, err, "err is expected to be non-nil")
+
+	result, err = redisProvider.HGetAll(22, "any_key")
+	assert.Equal((map[string]string)(nil), result, "Result is expected to be non nil")
+	assert.NotEqual(nil, err, "err is expected to be non-nil")
 }
 
 func Test_RedisProvider_HmGetReturnsSuccessfuly(t *testing.T) {
@@ -114,13 +113,24 @@ func Test_RedisProvider_HmGetReturnsError_ForInvalidDatabaseId(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal(([]interface{})(nil), result, "Result is expected to be nil")
 	assert.NotEqual(nil, err, "err is expected to be non-nil")
+
+	result, err = redisProvider.HmGet(21, "any_key", fields)
+	assert.Equal(([]interface{})(nil), result, "Result is expected to be nil")
+	assert.NotEqual(nil, err, "err is expected to be non-nil")
+
+       	result, err = redisProvider.HmGet(22, "any_key", fields)
+	assert.Equal(([]interface{})(nil), result, "Result is expected to be nil")
+	assert.NotEqual(nil, err, "err is expected to be non-nil")
 }
 
 func Test_GetRedisConnectionForDatabase_ReturnsConnectionSuccessfuly(t *testing.T) {
+	dbToRedisClientMapping = make(map[int]*redis.Client)
 	redisClient1, _ := GetRedisConnectionForDatabase(2)
 	redisClient2, _ := GetRedisConnectionForDatabase(2)
+	assert := assert.New(t)
+	assert.NotEqual(nil, redisClient1, "redisClient1 is expected to be non nil")
+	assert.NotEqual(nil, redisClient2, "redisClient2 is expected to be non nil")
 	if !(redisClient1 == redisClient2) {
 		t.Errorf("RedisClient1 and RedisClient2 is expected point to same redis client.")
 	}
 }
-
