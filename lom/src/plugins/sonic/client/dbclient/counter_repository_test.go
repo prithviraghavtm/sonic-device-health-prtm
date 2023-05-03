@@ -63,7 +63,7 @@ func (mockRedisProvider *MockRedisProvider) HGetAll(database int, key string) (m
 
 /* Test GetInterfaceCounters Method returns all counters successfuly */
 func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
-	// Mock
+        // Mock
         mockRedisProvider := new(MockRedisProvider)
         newMap := getInterfaceToODIMapping()
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Maybe().Return(newMap, nil)
@@ -80,13 +80,13 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
         strs2 := []string{"310", "311", "312"}
         counters2 := getCountersForInterfaces(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters2, nil)
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
-        
-	// Assert
-	mockRedisProvider.AssertNumberOfCalls(t, HmGetMethod, 3)
+
+        // Assert
+        mockRedisProvider.AssertNumberOfCalls(t, HmGetMethod, 3)
         mockRedisProvider.AssertExpectations(t)
         assert := assert.New(t)
         assert.NotEqual(nil, result, "Result is expected to be non nil")
@@ -106,24 +106,24 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
 /* Test GetInterfaceCounters returns error when HGetAll method returns error */
 func Test_GetInterfaceCounters_ReturnsErrorWhenHGetAllMethodFails(t *testing.T) {
         // Mock
-	interfaceToOidMapping = nil
-	mockRedisProvider := new(MockRedisProvider)
+        interfaceToOidMapping = nil
+        mockRedisProvider := new(MockRedisProvider)
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Return((map[string]string)(nil), errors.New("Error fetching data from redis."))
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
-        
-	// Assert
-	if result != nil {
-                t.Errorf("result is expected to be nil")
+
+        // Assert
+        if result != nil {
+           t.Errorf("result is expected to be nil")
         }
         assert.NotEqual(t, nil, err, "err is exptected to be non nil")
 }
 
 /* Test GetInterfaceCounters returns error when hmget call errors */
 func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
-	// Mock
+        // Mock
         mockRedisProvider := new(MockRedisProvider)
         newMap := getInterfaceToODIMapping()
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Maybe().Return(newMap, nil)
@@ -135,13 +135,13 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
         strs2 := []string{"310", "311", "312"}
         counters2 := getCountersForInterfaces(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
-        
-	// Assert
-	mockRedisProvider.AssertExpectations(t)
+
+        // Assert
+        mockRedisProvider.AssertExpectations(t)
         if result != nil {
                 t.Errorf("result is expected to be nil")
         }
@@ -151,7 +151,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
 /* Test GetInterfaceCounters returns error for an invalid IfInErrors counter from redis */
 func Test_GetInterfaceCounters_ReturnsErrorWhenIfInErrorsCastingFails(t *testing.T) {
         // Mock
-	mockRedisProvider := new(MockRedisProvider)
+        mockRedisProvider := new(MockRedisProvider)
         newMap := getInterfaceToODIMapping()
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Maybe().Return(newMap, nil)
 
@@ -165,14 +165,14 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenIfInErrorsCastingFails(t *testing
 
         strs2 := []string{"310", "311", "312"}
         counters2 := getCountersForInterfaces(strs2)
-	mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+        mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
-	
-	// Assert
-	mockRedisProvider.AssertExpectations(t)
+
+        // Assert
+        mockRedisProvider.AssertExpectations(t)
         if result != nil {
                 t.Errorf("result is expected to be nil")
         }
@@ -182,7 +182,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenIfInErrorsCastingFails(t *testing
 /* Test GetInterfaceCounters returns error for an invalid InUnicastPacket counter */
 func Test_GetInterfaceCounters_ReturnsErrorWhenInUnicastPacketsCastingFails(t *testing.T) {
         // Mock
-	mockRedisProvider := new(MockRedisProvider)
+        mockRedisProvider := new(MockRedisProvider)
         newMap := getInterfaceToODIMapping()
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Maybe().Return(newMap, nil)
 
@@ -197,13 +197,13 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenInUnicastPacketsCastingFails(t *t
         strs2 := []string{"310", "311", "312"}
         counters2 := getCountersForInterfaces(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
-        
-	// Assert
-	mockRedisProvider.AssertExpectations(t)
+
+        // Assert
+        mockRedisProvider.AssertExpectations(t)
         if result != nil {
                 t.Errorf("result is expected to be nil")
         }
@@ -213,7 +213,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenInUnicastPacketsCastingFails(t *t
 /* Test GetInterfaceCounters returns error for an invalid OutUnicastPackets counter from redis */
 func Test_GetInterfaceCounters_ReturnsErrorWhenOutUnicastPacketsCastingFails(t *testing.T) {
         // Mock
-	mockRedisProvider := new(MockRedisProvider)
+        mockRedisProvider := new(MockRedisProvider)
         newMap := getInterfaceToODIMapping()
         (mockRedisProvider).On(HGetAllMethod, 2, COUNTERS_PORT_NAME_MAP).Maybe().Return(newMap, nil)
 
@@ -228,13 +228,13 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenOutUnicastPacketsCastingFails(t *
         strs2 := []string{"310", "311", "312"}
         counters2 := getCountersForInterfaces(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
-        
-	// Act
-	counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
+
+        // Act
+        counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
         result, err := counterDBClient.GetInterfaceCounters()
         mockRedisProvider.AssertExpectations(t)
 
-	// Assert
+        // Assert
         if result != nil {
                 t.Errorf("result is expected to be nil")
         }
