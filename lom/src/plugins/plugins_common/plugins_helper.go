@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+        "lom/src/lib/lomcommon"
+        "lom/src/lib/lomipc"
 )
 
 /* Interface for limiting reporting frequency of plugin */
@@ -111,4 +113,123 @@ func (fxdSizeRollingWindow *FixedSizeRollingWindow[T]) AddElement(value T) {
 /* Gets all current elements as list */
 func (fxdSizeRollingWindow *FixedSizeRollingWindow[T]) GetElements() *list.List {
         return fxdSizeRollingWindow.doublyLinkedList
+}
+
+const (
+	ResultCodeSuccess int = iota
+	ResultCodeInvalidArgument
+	ResultCodeAborted
+)
+
+const (
+	ResultStringSuccess = "Success"
+	ResultStringFailure = "Failure"
+)
+
+/*
+This util can be used by detection plugins which needs to detect anomalies periodically and send heartbeat to plugin manager.
+This util takes care of executing detection logic periodically and shutting down the request when shutdown is invoked on the plugin.
+If detection plugin uses this Util as a field in its struct, Request and Shutdown methods from this util get promoted to the plugin.
+*/
+type PeriodicDetectionPluginUtil struct {
+	requestFrequencyInSecs  int
+	heartBeatIntervalInSecs int
+	shutDownChannel         chan interface{}
+	requestAborted          bool
+	requestFunc             func(*lomipc.ActionRequestData) *lomipc.ActionResponseData
+	shutdownFunc            func() error
+	pluginName              string
+}
+
+/* This method needs to be called to initialize fields present in PeriodicDetectionPluginUtil struct */
+func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName string, requestFrequencyInSecs int, actionConfig *lomcommon.ActionCfg_t, requestFunction func(*lomipc.ActionRequestData) *lomipc.ActionResponseData, shutDownFunction func() error) error {
+	if actionConfig.HeartbeatInt <= 0 {
+		// Do not use a default heartbeat interval. Validate and honor the one passed from plugin manager.
+		return errors.New(fmt.Sprintf("Invalid heartbeat interval %d", actionConfig.HeartbeatInt))
+	}
+	if requestFrequencyInSecs <= 0 {
+		return errors.New(fmt.Sprintf("Invalid requestFreq %d", requestFrequencyInSecs))
+	}
+	if requestFunction == nil || shutDownFunction == nil {
+		return errors.New(fmt.Sprintf("requestFunction or shutDownFunction is not initialized"))
+	}
+	if pluginName == "" {
+		return errors.New(fmt.Sprintf("PluginName invalid"))
+	}
+	periodicDetectionPluginUtil.requestFrequencyInSecs = requestFrequencyInSecs
+	periodicDetectionPluginUtil.heartBeatIntervalInSecs = actionConfig.HeartbeatInt
+	periodicDetectionPluginUtil.requestAborted = false
+	periodicDetectionPluginUtil.shutDownChannel = make(chan interface{})
+	periodicDetectionPluginUtil.requestFunc = requestFunction
+	periodicDetectionPluginUtil.shutdownFunc = shutDownFunction
+	periodicDetectionPluginUtil.pluginName = pluginName
+	lomcommon.LogInfo(fmt.Sprintf("Initialized periodicDetectionPluginUtil successfuly for (%s)",pluginName))
+	return nil
+}
+
+/* This method is promoted to the plugin Periodically invokes detection logic and send heartbeat as well. Honors shutdown when shutdown is invoked on plugin */
+func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
+	hbchan chan PluginHeartBeat,
+	request *lomipc.ActionRequestData) *lomipc.ActionResponseData {
+
+	if request.Timeout > 0 {
+		return getResponse(request, "", "", ResultCodeInvalidArgument, "Invalid Timeout value for detection plugin")
+	}
+
+	detectionTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.requestFrequencyInSecs) * time.Second)
+	heartBeatTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.heartBeatIntervalInSecs) * time.Second)
+	lomcommon.LogInfo(fmt.Sprintf("Timers initialized for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	for {
+		select {
+		case <-heartBeatTicker.C:
+			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.pluginName, EpochTime: time.Now().Unix()}
+			hbchan <- pluginHeartBeat
+
+		case <-detectionTicker.C:
+			if !periodicDetectionPluginUtil.requestAborted {
+				response := periodicDetectionPluginUtil.requestFunc(request)
+				if response != nil {
+					return response
+				}
+			}
+
+		case <-periodicDetectionPluginUtil.shutDownChannel:
+			lomcommon.LogInfo(fmt.Sprintf("Aborting Request for (%s)", periodicDetectionPluginUtil.pluginName))
+			responseData := getResponse(request, "", "", ResultCodeAborted, ResultStringFailure)
+			periodicDetectionPluginUtil.requestAborted = true
+			return responseData
+		}
+	}
+}
+
+/* Shutdown that aborts the request. It also cleans up plugin defined cleanUp at the end */
+func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Shutdown() error {
+	lomcommon.LogInfo(fmt.Sprintf("Shutdown called for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	close(periodicDetectionPluginUtil.shutDownChannel)
+	startTime := time.Now()
+	for {
+		if periodicDetectionPluginUtil.requestAborted {
+			break
+		}
+
+		elapsedTimeInSeconds := time.Since(startTime).Seconds()
+		if elapsedTimeInSeconds > float64(periodicDetectionPluginUtil.requestFrequencyInSecs) {
+			return errors.New(fmt.Sprintf("Request could not be aborted"))
+		}
+	}
+
+	periodicDetectionPluginUtil.shutdownFunc()
+	lomcommon.LogInfo(fmt.Sprintf("Shutdown successful for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	return nil
+}
+
+func getResponse(request *lomipc.ActionRequestData, anomalyKey string, response string, resultCode int, resultString string) *lomipc.ActionResponseData {
+	responseData := lomipc.ActionResponseData{Action: request.Action,
+		InstanceId:        request.InstanceId,
+		AnomalyInstanceId: request.AnomalyInstanceId,
+		AnomalyKey:        anomalyKey,
+		Response:          response,
+		ResultCode:        resultCode,
+		ResultStr:         resultString}
+	return &responseData
 }
