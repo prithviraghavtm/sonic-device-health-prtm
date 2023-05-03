@@ -12,7 +12,7 @@ import (
 func mockHmGetFunction(redisClient *redis.Client, key string, fields []string) ([]interface{}, error) {
     if key == "hmget_scenario1_key" {
         str := []string{"111", "222", "333"}
-        counters := getCountersForInterfaces(str)
+        counters := convertStringToInterfaceType(str)
         return counters, nil
     } else if key == "hmget_scenario2_key" {
         return nil, errors.New("HmGet scenario2_key error")

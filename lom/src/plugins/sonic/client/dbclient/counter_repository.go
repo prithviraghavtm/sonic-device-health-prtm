@@ -17,7 +17,12 @@ const (
     in_unicast_packets_counter_key        string = "InUnicastPackets"
     out_unicast_packets_counter_key       string = "OutUnicastPackets"
     atoi_base                                int = 10
-        uint_bit_size                            int = 64
+    uint_bit_size                            int = 64
+    port_table_redis_key                  string = "PORT_TABLE:"
+    admin_status_field                    string = "admin_status"
+    oper_status_field                     string = "oper_status"
+    interface_status_up                   string = "up"
+    if_out_errors_counter_key             string = "IfOutErrors"
 )
 
 type CounterRepository struct {
@@ -28,6 +33,11 @@ type InterfaceCountersMap map[string]map[string]uint64
 
 /* Cache for storing interface to Oid mapping */
 var interfaceToOidMapping map[string]string
+
+type CounterRepositoryInterface interface {
+    GetInterfaceCounters() (map[string]map[string]uint64, error)
+    isInterfaceActive(interfaceName string) (bool, error)
+}
 
 /*
 Returns interface counters for all interfaces on the Sonic device.
@@ -46,33 +56,55 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
         }
 
     for interfaceName, interfaceOid := range interfaceToOidMapping {
-
-        interfaceCountersKey := counters_db_table_name + interfaceOid
-        fields := []string{sai_port_stat_if_in_errors_field, sai_port_stat_if_in_ucast_pkts_field, sai_port_stat_if_out_ucast_pkts_field}
-        result, err := counterRepository.RedisProvider.HmGet(COUNTER_DB_ID, interfaceCountersKey, fields)
-
+        isInterfaceActive, err := counterRepository.isInterfaceActive(interfaceName)
         if err != nil {
-            return nil, errors.New(fmt.Sprintf("HmGet for key (%s) failed. err:(%v)", interfaceCountersKey, err))
+            return nil, err
         }
 
-        ifInErrors, err := strconv.ParseUint(result[0].(string), atoi_base, uint_bit_size)
-        if err != nil {
-            return nil, errors.New(fmt.Sprintf("IfInErrors counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
-        }
+        if isInterfaceActive {
+            interfaceCountersKey := counters_db_table_name + interfaceOid
+            fields := []string{sai_port_stat_if_in_errors_field, sai_port_stat_if_in_ucast_pkts_field, sai_port_stat_if_out_ucast_pkts_field}
+            result, err := counterRepository.RedisProvider.HmGet(COUNTER_DB_ID, interfaceCountersKey, fields)
 
-        inUnicastPackets, err := strconv.ParseUint(result[1].(string), atoi_base, uint_bit_size)
-        if err != nil {
-            return nil, errors.New(fmt.Sprintf("InUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
-        }
+            if err != nil {
+                return nil, errors.New(fmt.Sprintf("HmGet for key (%s) failed. err:(%v)", interfaceCountersKey, err))
+            }
 
-        outUnicastPackets, err := strconv.ParseUint(result[2].(string), atoi_base, uint_bit_size)
-        if err != nil {
-            return nil, errors.New(fmt.Sprintf("OutUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
-        }
+            ifInErrors, err := strconv.ParseUint(result[0].(string), atoi_base, uint_bit_size)
+            if err != nil {
+                return nil, errors.New(fmt.Sprintf("IfInErrors counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
+            }
 
-        var interfaceCounters = map[string]uint64{if_in_errors_counter_key: ifInErrors, in_unicast_packets_counter_key: inUnicastPackets, out_unicast_packets_counter_key: outUnicastPackets}
-        interfaceCountersMap[interfaceName] = interfaceCounters
+            inUnicastPackets, err := strconv.ParseUint(result[1].(string), atoi_base, uint_bit_size)
+            if err != nil {
+                return nil, errors.New(fmt.Sprintf("InUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
+            }
+
+            outUnicastPackets, err := strconv.ParseUint(result[2].(string), atoi_base, uint_bit_size)
+            if err != nil {
+                return nil, errors.New(fmt.Sprintf("OutUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
+            }
+
+            var interfaceCounters = map[string]uint64{if_in_errors_counter_key: ifInErrors, in_unicast_packets_counter_key: inUnicastPackets, out_unicast_packets_counter_key: outUnicastPackets}
+            interfaceCountersMap[interfaceName] = interfaceCounters
+        }
     }
 
     return interfaceCountersMap, nil
 }
+
+/* Returns true if an interface's oper and admin status is up, else false. */
+func (counterRepository *CounterRepository) isInterfaceActive(interfaName string) (bool, error) {
+    interfaceStatusKey := port_table_redis_key + interfaName
+    fields := []string{admin_status_field, oper_status_field}
+    result, err := counterRepository.RedisProvider.HmGet(APPL_DB_ID, interfaceStatusKey, fields)
+    if err != nil {
+        return false, errors.New(fmt.Sprintf("isInterfaceActive.HmGet Failed for key (%s). err: (%v)", interfaceStatusKey, err))
+    }
+    if result[0].(string) == interface_status_up && result[1].(string) == interface_status_up {
+        return true, nil
+    }
+    return false, nil
+}
+
+

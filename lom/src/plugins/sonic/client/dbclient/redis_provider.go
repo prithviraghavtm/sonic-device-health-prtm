@@ -9,6 +9,7 @@ import (
 const (
     redisServerAddr     = "localhost:6379"
     redisServerPassword = ""
+    APPL_DB_ID          = 0
     COUNTER_DB_ID       = 2
 )
 
@@ -49,7 +50,7 @@ func GetRedisConnectionForDatabase(databaseIdentifier int) (*redis.Client, error
 
 /* Validates if databaseIdentifier is allowed to be accessed by LoM" */
 func validateDbIdentifier(databaseIdentifier int) bool {
-    return databaseIdentifier == COUNTER_DB_ID
+    return databaseIdentifier == APPL_DB_ID || databaseIdentifier == COUNTER_DB_ID
 }
 
 type RedisProviderInterface interface {
