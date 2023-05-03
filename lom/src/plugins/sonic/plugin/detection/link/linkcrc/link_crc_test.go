@@ -15,7 +15,7 @@ type MockCounterRepository struct {
 	mock.Mock
 }
 
-func (mockCounterRepository *MockCounterRepository) GetInterfaceCounters() (dbclient.InterfaceCountersMap, error) {
+func (mockCounterRepository *MockCounterRepository) GetCountersForActiveInterfaces() (dbclient.InterfaceCountersMap, error) {
 	args := mockCounterRepository.Called()
 	return args.Get(0).(dbclient.InterfaceCountersMap), args.Error(1)
 }
@@ -74,7 +74,7 @@ func Test_LinkCrcDetectionPlugin_DetectCrcReturnsNilForError(t *testing.T) {
 	linkCRCDetectionPlugin.Init(&actionConfig)
 
 	mockCounterRepository := new(MockCounterRepository)
-	mockCounterRepository.On("GetInterfaceCounters").Return(dbclient.InterfaceCountersMap(nil), errors.New("Some Error"))
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(dbclient.InterfaceCountersMap(nil), errors.New("Some Error"))
 	linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
 	request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
@@ -102,11 +102,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionDetectsSuccessfuly(t *testing.T) {
 	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
 	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap3, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap4, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap5, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap1, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap2, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap3, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap4, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap5, nil).Once()
 	linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
 	request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
@@ -167,11 +167,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionReportsForOnlyOneInterface(t *testi
 	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
 	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap3, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap4, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap5, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap1, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap2, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap3, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap4, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap5, nil).Once()
 	linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
 	request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
@@ -214,11 +214,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionReportsNone(t *testing.T) {
 	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
 	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap3, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap4, nil).Once()
-	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap5, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap1, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap2, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap3, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap4, nil).Once()
+	mockCounterRepository.On("GetCountersForActiveInterfaces").Return(counterMap5, nil).Once()
 	linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
 	request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}

@@ -36,7 +36,7 @@ type InterfaceCountersMap map[string]map[string]uint64
 var interfaceToOidMapping map[string]string
 
 type CounterRepositoryInterface interface {
-    GetInterfaceCounters() (InterfaceCountersMap, error)
+    GetCountersForActiveInterfaces() (InterfaceCountersMap, error)
     IsInterfaceActive(interfaceName string) (bool, error)
 }
 
@@ -44,7 +44,7 @@ type CounterRepositoryInterface interface {
 Returns interface counters for all interfaces on the Sonic device.
 First it gets all oids for interfaces and then gets counters for each interface by performing redis hmGet calls.
 */
-func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCountersMap, error) {
+func (counterRepository *CounterRepository) GetCountersForActiveInterfaces() (InterfaceCountersMap, error) {
 
     var interfaceCountersMap = make(InterfaceCountersMap)
         var err error

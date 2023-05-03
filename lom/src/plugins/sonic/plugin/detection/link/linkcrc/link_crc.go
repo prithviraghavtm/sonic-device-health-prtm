@@ -76,7 +76,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
 	// LogInfo fmt.Sprintf("executeCrcDetection Starting")
 	ifAnyInterfaceHasCrcError := false
 	var listOfInterfacesWithCrcError strings.Builder
-	currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetInterfaceCounters()
+	currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForActiveInterfaces()
 	if err != nil {
 		// Log this error and make it alertable.
 		errors.New(fmt.Sprintf("Error fetching interface counters for LinkCrc detection"))

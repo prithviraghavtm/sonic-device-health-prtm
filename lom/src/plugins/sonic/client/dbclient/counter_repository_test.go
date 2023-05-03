@@ -89,7 +89,7 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
 
         // Assert
         mockRedisProvider.AssertNumberOfCalls(t, HmGetMethod, 6)
@@ -121,7 +121,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHGetAllMethodFails(t *testing.T) 
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
 
         // Assert
         if result != nil {
@@ -149,7 +149,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
 
         // Assert
         mockRedisProvider.AssertExpectations(t)
@@ -182,7 +182,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenIfInErrorsCastingFails(t *testing
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
 
         // Assert
         mockRedisProvider.AssertExpectations(t)
@@ -215,7 +215,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenInUnicastPacketsCastingFails(t *t
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
 
         // Assert
         mockRedisProvider.AssertExpectations(t)
@@ -248,7 +248,7 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenOutUnicastPacketsCastingFails(t *
 
         // Act
         counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
-        result, err := counterDBClient.GetInterfaceCounters()
+        result, err := counterDBClient.GetCountersForActiveInterfaces()
         mockRedisProvider.AssertExpectations(t)
 
         // Assert
