@@ -1,0 +1,20 @@
+{
+  "link_flap": {
+    "Name": "link_crc",
+    "Type": "Detection",
+    "Timeout": 0,
+    "HeartbeatInt": 30,
+    "Disable": "true",
+    "Mimic": "false",
+    "ActionKnobs": {
+      "DetectionFreqInSecs": 30,
+      "IfInErrorsDiffMinValue": 0,
+      "InUnicastPacketsMinValue": 100,
+      "OutUnicastPacketsMinValue": 100,
+      "OutlierRollingWindowSize": 5,
+      "MinCrcError": 0.000001,
+      "MinOutliersForDetection": 2,
+      "LookBackPeriodInSecs": 125
+    }
+  }
+}

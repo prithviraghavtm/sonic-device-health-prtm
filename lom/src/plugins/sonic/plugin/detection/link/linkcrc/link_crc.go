@@ -2,7 +2,6 @@
 package linkcrc
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -32,7 +31,6 @@ const (
 	min_crc_error_config_key                 = "MinCrcError"
 	min_outliers_for_detection_config_key    = "MinOutliersForDetection"
 	look_back_period_in_secs_config_key      = "LookBackPeriodInSecs"
-	plugin_name                              = "LinkCrcDetectionPlugin"
 	plugin_version                           = "1.0.0.0"
 )
 
@@ -68,32 +66,34 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
 	linkCrcDetectionPlugin.counterRepository = &dbclient.CounterRepository{RedisProvider: &dbclient.RedisProvider{}}
 	linkCrcDetectionPlugin.monitoredInterfaces = map[string]LinkCrcDetectorInterface{}
 	linkCrcDetectionPlugin.reportingFreqLimiter = plugins_common.GetDefaultDetectionFrequencyLimiter()
-	linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(plugin_name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
+	err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
+	if err != nil {
+		lomcommon.LogError(fmt.Sprintf("Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
+		return err
+	}
 	return nil
 }
 
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool) *lomipc.ActionResponseData {
-	// LogInfo fmt.Sprintf("executeCrcDetection Starting")
+	lomcommon.LogInfo(fmt.Sprintf("executeCrcDetection Starting"))
 	ifAnyInterfaceHasCrcError := false
 	var listOfInterfacesWithCrcError strings.Builder
 	currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForActiveInterfaces()
 	if err != nil {
-		// Log this error and make it alertable.
-		errors.New(fmt.Sprintf("Error fetching interface counters for LinkCrc detection"))
+		lomcommon.LogError("Error fetching interface counters for LinkCrc detection")
 		*isExecutionHealthy = false
 		return nil
 	}
 
 	if len(currentInterfaceCounters) == 0 {
-		// Log this error and make it alertable.
 		*isExecutionHealthy = false
-		errors.New(fmt.Sprintf("interface counters is 0"))
+		lomcommon.LogError("interface counters is 0")
 		return nil
 	}
 
 	for interfaceName, interfaceCounters := range currentInterfaceCounters {
 		if interfaceCounters == nil {
-			fmt.Sprintf("Nil interface Counters for %s", interfaceName)
+			lomcommon.LogError(fmt.Sprintf("Nil interface Counters for %s", interfaceName))
 			continue
 		}
 
@@ -118,7 +118,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
 	}
 	*isExecutionHealthy = true
 	if ifAnyInterfaceHasCrcError {
-		// LogInfo fmt.Sprintf("executeCrcDetection Anomaly Detected")
+		lomcommon.LogInfo("executeCrcDetection Anomaly Detected")
 		return plugins_common.GetResponse(request, strings.TrimSuffix(listOfInterfacesWithCrcError.String(), ","), "Detected Crc", plugins_common.ResultCodeSuccess, plugins_common.ResultStringSuccess)
 	}
 	return nil
@@ -130,7 +130,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeShutdown() error {
 }
 
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) GetPluginId() *plugins_common.PluginId {
-	return &plugins_common.PluginId{Name: plugin_name, Version: plugin_version}
+	return &plugins_common.PluginId{Name: linkCrcDetectionPlugin.PluginName, Version: plugin_version}
 }
 
 type LinkCrcDetectorInterface interface {

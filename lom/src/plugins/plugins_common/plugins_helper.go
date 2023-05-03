@@ -130,6 +130,10 @@ const (
 This util can be used by detection plugins which needs to detect anomalies periodically and send heartbeat to plugin manager.
 This util takes care of executing detection logic periodically and shutting down the request when shutdown is invoked on the plugin.
 If detection plugin uses this Util as a field in its struct, Request and Shutdown methods from this util get promoted to the plugin.
+Guidence for requestFunc
+  - Return nil if periodic detection needs to be continued.
+  - Return action response if Request needs to return to the caller.
+  - isExecutionHealthy needs to be marked false when there is any issue in Request method that needs to be reported.
 */
 type PeriodicDetectionPluginUtil struct {
 	requestFrequencyInSecs  int
@@ -138,7 +142,7 @@ type PeriodicDetectionPluginUtil struct {
 	requestAborted          bool
 	requestFunc             func(*lomipc.ActionRequestData, *bool) *lomipc.ActionResponseData
 	shutdownFunc            func() error
-	pluginName              string
+	PluginName              string
 }
 
 /* This method needs to be called to initialize fields present in PeriodicDetectionPluginUtil struct */
@@ -162,7 +166,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName 
 	periodicDetectionPluginUtil.shutDownChannel = make(chan interface{})
 	periodicDetectionPluginUtil.requestFunc = requestFunction
 	periodicDetectionPluginUtil.shutdownFunc = shutDownFunction
-	periodicDetectionPluginUtil.pluginName = pluginName
+	periodicDetectionPluginUtil.PluginName = pluginName
 	lomcommon.LogInfo(fmt.Sprintf("Initialized periodicDetectionPluginUtil successfuly for (%s)",pluginName))
 	return nil
 }
@@ -178,13 +182,13 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 
 	detectionTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.requestFrequencyInSecs) * time.Second)
 	heartBeatTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.heartBeatIntervalInSecs) * time.Second)
-	lomcommon.LogInfo(fmt.Sprintf("Timers initialized for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	lomcommon.LogInfo(fmt.Sprintf("Timers initialized for plugin (%s)", periodicDetectionPluginUtil.PluginName))
         isExecutionHealthy := false
 	for {
 		select {
 		case <-heartBeatTicker.C:
 		     if isExecutionHealthy {
-			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.pluginName, EpochTime: time.Now().Unix()}
+			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.PluginName, EpochTime: time.Now().Unix()}
 			hbchan <- pluginHeartBeat
                      }
 		case <-detectionTicker.C:
@@ -196,7 +200,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 			}
 
 		case <-periodicDetectionPluginUtil.shutDownChannel:
-			lomcommon.LogInfo(fmt.Sprintf("Aborting Request for (%s)", periodicDetectionPluginUtil.pluginName))
+			lomcommon.LogInfo(fmt.Sprintf("Aborting Request for (%s)", periodicDetectionPluginUtil.PluginName))
 			responseData := GetResponse(request, "", "", ResultCodeAborted, ResultStringFailure)
 			periodicDetectionPluginUtil.requestAborted = true
 			return responseData
@@ -206,7 +210,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 
 /* Shutdown that aborts the request. It also cleans up plugin defined cleanUp at the end */
 func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Shutdown() error {
-	lomcommon.LogInfo(fmt.Sprintf("Shutdown called for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	lomcommon.LogInfo(fmt.Sprintf("Shutdown called for plugin (%s)", periodicDetectionPluginUtil.PluginName))
 	close(periodicDetectionPluginUtil.shutDownChannel)
 	startTime := time.Now()
 	for {
@@ -221,7 +225,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Shutdown() error
 	}
 
 	periodicDetectionPluginUtil.shutdownFunc()
-	lomcommon.LogInfo(fmt.Sprintf("Shutdown successful for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+	lomcommon.LogInfo(fmt.Sprintf("Shutdown successful for plugin (%s)", periodicDetectionPluginUtil.PluginName))
 	return nil
 }
 
