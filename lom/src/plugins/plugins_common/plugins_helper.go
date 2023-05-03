@@ -136,13 +136,13 @@ type PeriodicDetectionPluginUtil struct {
 	heartBeatIntervalInSecs int
 	shutDownChannel         chan interface{}
 	requestAborted          bool
-	requestFunc             func(*lomipc.ActionRequestData) *lomipc.ActionResponseData
+	requestFunc             func(*lomipc.ActionRequestData, *bool) *lomipc.ActionResponseData
 	shutdownFunc            func() error
 	pluginName              string
 }
 
 /* This method needs to be called to initialize fields present in PeriodicDetectionPluginUtil struct */
-func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName string, requestFrequencyInSecs int, actionConfig *lomcommon.ActionCfg_t, requestFunction func(*lomipc.ActionRequestData) *lomipc.ActionResponseData, shutDownFunction func() error) error {
+func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName string, requestFrequencyInSecs int, actionConfig *lomcommon.ActionCfg_t, requestFunction func(*lomipc.ActionRequestData, *bool) *lomipc.ActionResponseData, shutDownFunction func() error) error {
 	if actionConfig.HeartbeatInt <= 0 {
 		// Do not use a default heartbeat interval. Validate and honor the one passed from plugin manager.
 		return errors.New(fmt.Sprintf("Invalid heartbeat interval %d", actionConfig.HeartbeatInt))
@@ -179,15 +179,17 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 	detectionTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.requestFrequencyInSecs) * time.Second)
 	heartBeatTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.heartBeatIntervalInSecs) * time.Second)
 	lomcommon.LogInfo(fmt.Sprintf("Timers initialized for plugin (%s)", periodicDetectionPluginUtil.pluginName))
+        isExecutionHealthy := false
 	for {
 		select {
 		case <-heartBeatTicker.C:
+		     if isExecutionHealthy {
 			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.pluginName, EpochTime: time.Now().Unix()}
 			hbchan <- pluginHeartBeat
-
+                     }
 		case <-detectionTicker.C:
 			if !periodicDetectionPluginUtil.requestAborted {
-				response := periodicDetectionPluginUtil.requestFunc(request)
+				response := periodicDetectionPluginUtil.requestFunc(request, &isExecutionHealthy)
 				if response != nil {
 					return response
 				}

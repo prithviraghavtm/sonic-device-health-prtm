@@ -182,8 +182,9 @@ func (dummyPlugin *DummyPlugin) Init(actionConfig *lomcommon.ActionCfg_t) error 
 	return nil
 }
 
-func (dummyPlugin *DummyPlugin) executeRequest(request *lomipc.ActionRequestData) *lomipc.ActionResponseData {
+func (dummyPlugin *DummyPlugin) executeRequest(request *lomipc.ActionRequestData, isHealthy *bool) *lomipc.ActionResponseData {
 	dummyPlugin.testValue1 = 2
+	*isHealthy = true
 	if request.Action == "ReturnNilScenario" {
 		return nil
 	}
@@ -226,11 +227,11 @@ func Test_PeriodicDetectionPluginUtil_RequestDetectsSuccessfuly(t *testing.T) {
 /* Validates that the util sends heartbeat */
 func Test_PeriodicDetectionPluginUtil_SendsHeartbeat(t *testing.T) {
 	var dummyPlugin Plugin
-	testRequestFrequency = 3600
+	testRequestFrequency = 1
 	dummyPlugin = &DummyPlugin{}
 	actionConfig := lomcommon.ActionCfg_t{HeartbeatInt: 1}
 	dummyPlugin.Init(&actionConfig)
-	request := &lomipc.ActionRequestData{}
+	request := &lomipc.ActionRequestData{Action: "ReturnNilScenario"}
 	go func() {
 		time.Sleep(3 * time.Second)
 		dummyPlugin.Shutdown()
@@ -240,7 +241,7 @@ func Test_PeriodicDetectionPluginUtil_SendsHeartbeat(t *testing.T) {
 	<-pluginHBChan
 	assert := assert.New(t)
 	assert.NotNil(response, "response is expected to be non nil")
-	assert.Equal(1, dummyPlugin.(*DummyPlugin).testValue1, "someValue is expected to be 2")
+	assert.Equal(2, dummyPlugin.(*DummyPlugin).testValue1, "someValue is expected to be 2")
 	assert.True(dummyPlugin.(*DummyPlugin).requestAborted, "requestAborted is expected to be true")
 }
 
