@@ -173,7 +173,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 	request *lomipc.ActionRequestData) *lomipc.ActionResponseData {
 
 	if request.Timeout > 0 {
-		return getResponse(request, "", "", ResultCodeInvalidArgument, "Invalid Timeout value for detection plugin")
+		return GetResponse(request, "", "", ResultCodeInvalidArgument, "Invalid Timeout value for detection plugin")
 	}
 
 	detectionTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.requestFrequencyInSecs) * time.Second)
@@ -197,7 +197,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 
 		case <-periodicDetectionPluginUtil.shutDownChannel:
 			lomcommon.LogInfo(fmt.Sprintf("Aborting Request for (%s)", periodicDetectionPluginUtil.pluginName))
-			responseData := getResponse(request, "", "", ResultCodeAborted, ResultStringFailure)
+			responseData := GetResponse(request, "", "", ResultCodeAborted, ResultStringFailure)
 			periodicDetectionPluginUtil.requestAborted = true
 			return responseData
 		}
@@ -225,7 +225,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Shutdown() error
 	return nil
 }
 
-func getResponse(request *lomipc.ActionRequestData, anomalyKey string, response string, resultCode int, resultString string) *lomipc.ActionResponseData {
+func GetResponse(request *lomipc.ActionRequestData, anomalyKey string, response string, resultCode int, resultString string) *lomipc.ActionResponseData {
 	responseData := lomipc.ActionResponseData{Action: request.Action,
 		InstanceId:        request.InstanceId,
 		AnomalyInstanceId: request.AnomalyInstanceId,

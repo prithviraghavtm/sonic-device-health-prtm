@@ -13,16 +13,16 @@ const (
     sai_port_stat_if_in_errors_field      string = "SAI_PORT_STAT_IF_IN_ERRORS"
     sai_port_stat_if_in_ucast_pkts_field  string = "SAI_PORT_STAT_IF_IN_UCAST_PKTS"
     sai_port_stat_if_out_ucast_pkts_field string = "SAI_PORT_STAT_IF_OUT_UCAST_PKTS"
-    if_in_errors_counter_key              string = "IfInErrors"
-    in_unicast_packets_counter_key        string = "InUnicastPackets"
-    out_unicast_packets_counter_key       string = "OutUnicastPackets"
     atoi_base                                int = 10
     uint_bit_size                            int = 64
     port_table_redis_key                  string = "PORT_TABLE:"
     admin_status_field                    string = "admin_status"
     oper_status_field                     string = "oper_status"
     interface_status_up                   string = "up"
-    if_out_errors_counter_key             string = "IfOutErrors"
+    IF_IN_ERRORS_COUNTER_KEY              string = "IfInErrors"
+    IF_OUT_ERRORS_COUNTER_KEY             string = "IfOutErrors"
+    IN_UNICAST_PACKETS_COUNTER_KEY        string = "InUnicastPackets"
+    OUT_UNICAST_PACKETS_COUNTER_KEY       string = "OutUnicastPackets"
 )
 
 type CounterRepository struct {
@@ -35,7 +35,7 @@ type InterfaceCountersMap map[string]map[string]uint64
 var interfaceToOidMapping map[string]string
 
 type CounterRepositoryInterface interface {
-    GetInterfaceCounters() (map[string]map[string]uint64, error)
+    GetInterfaceCounters() (InterfaceCountersMap, error)
     isInterfaceActive(interfaceName string) (bool, error)
 }
 
@@ -85,7 +85,7 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
                 return nil, errors.New(fmt.Sprintf("OutUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
 
-            var interfaceCounters = map[string]uint64{if_in_errors_counter_key: ifInErrors, in_unicast_packets_counter_key: inUnicastPackets, out_unicast_packets_counter_key: outUnicastPackets}
+            var interfaceCounters = map[string]uint64{IF_IN_ERRORS_COUNTER_KEY: ifInErrors, IN_UNICAST_PACKETS_COUNTER_KEY: inUnicastPackets, OUT_UNICAST_PACKETS_COUNTER_KEY: outUnicastPackets}
             interfaceCountersMap[interfaceName] = interfaceCounters
         }
     }
