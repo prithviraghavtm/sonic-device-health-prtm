@@ -7,6 +7,7 @@ import (
     "os"
     "path/filepath"
     "sort"
+    "fmt"
 )
 
 const (
@@ -657,4 +658,58 @@ func InitConfigPath(path string) error {
 
     _, err := InitConfigMgr(cfgFiles)
     return err
+}
+
+/* Gets settings of int type from json string */
+func GetIntConfigurationFromJson(jsonString string, configurationKey string, defaultValue int) int {
+	if jsonString == "" {
+		return defaultValue
+	}
+
+	var resultMap map[string]interface{}
+	err := json.Unmarshal([]byte(jsonString), &resultMap)
+	if err != nil {
+		LogError(fmt.Sprintf("Error unmarshalling jsonString %s for key %s", jsonString, configurationKey))
+		return defaultValue
+	}
+
+	configurationVal, ok := resultMap[configurationKey]
+	if !ok {
+		LogError(fmt.Sprintf("key %s not present in json string %s", configurationKey, jsonString))
+		return defaultValue
+	}
+
+	configurationValInt, ok := configurationVal.(float64)
+	if !ok {
+		LogError(fmt.Sprintf("key %s not of type int in json string %s", configurationKey, jsonString))
+		return defaultValue
+	}
+	return int(configurationValInt)
+}
+
+/* Gets settings of float64 type from json string */
+func GetFloatConfigurationFromJson(jsonString string, configurationKey string, defaultValue float64) float64 {
+	if jsonString == "" {
+		return defaultValue
+	}
+
+	var resultMap map[string]interface{}
+	err := json.Unmarshal([]byte(jsonString), &resultMap)
+	if err != nil {
+		LogError(fmt.Sprintf("Error unmarshalling jsonString %s for key %s", jsonString, configurationKey))
+		return defaultValue
+	}
+
+	configurationVal, ok := resultMap[configurationKey]
+	if !ok {
+		LogError(fmt.Sprintf("key %s not present in json string %s", configurationKey, jsonString))
+		return defaultValue
+	}
+
+	configurationValFloat64, ok := configurationVal.(float64)
+	if !ok {
+		LogError(fmt.Sprintf("key %s not of type float64 in json string %s", configurationKey, jsonString))
+		return defaultValue
+	}
+	return configurationValFloat64
 }

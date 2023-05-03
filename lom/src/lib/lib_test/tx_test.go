@@ -32,6 +32,7 @@ import (
     "strconv"
     "testing"
     "time"
+    "github.com/stretchr/testify/assert"
 )
 
 type TestClientData struct {
@@ -1372,3 +1373,82 @@ func TestShutdown(t *testing.T) {
     //LogDebug("---------- COMPLETE ----------------")
 }
 
+/* Validates if configuration is returned from a valid json */
+func Test_GetIntConfigurationFromJson_ReturnsSuccessfully(t *testing.T) {
+	jsonString := "{\"abc\":123}"
+	result := GetIntConfigurationFromJson(jsonString, "abc", 5)
+	assert := assert.New(t)
+	assert.Equal(123, result)
+}
+
+/* Validates if default configuration is returned for empty json */
+func Test_GetIntConfigurationFromJson_ReturnsDefaultValueForEmptyJson(t *testing.T) {
+	jsonString := ""
+	result := GetIntConfigurationFromJson(jsonString, "abc", 5)
+	assert := assert.New(t)
+	assert.Equal(5, result)
+}
+
+/* Validates if default configuration is returned for invalid json */
+func Test_GetIntConfigurationFromJson_ReturnsDefaultValueForInvalidJson(t *testing.T) {
+	jsonString := "{\"abc\";abc}"
+	result := GetIntConfigurationFromJson(jsonString, "abc", 5)
+	assert := assert.New(t)
+	assert.Equal(5, result)
+}
+
+/* Validates if default value is returned when key not found */
+func Test_GetIntConfigurationFromJson_ReturnsDefaultValueForMissingConfigKey(t *testing.T) {
+	jsonString := "{\"abc\":123}"
+	result := GetIntConfigurationFromJson(jsonString, "xyz", 5)
+	assert := assert.New(t)
+	assert.Equal(5, result)
+}
+
+/* Validates if default value is returned for invalid configuration value type */
+func Test_GetIntConfigurationFromJson_ReturnsDefaultValueForInvalidConfigValueType(t *testing.T) {
+	jsonString := "{\"abc\":abc}"
+	result := GetIntConfigurationFromJson(jsonString, "abc", 5)
+	assert := assert.New(t)
+	assert.Equal(5, result)
+}
+
+/* Validates configuration is returned successfuly for a valid json */
+func Test_GetFloatConfigurationFromJson_ReturnsSuccessfully(t *testing.T) {
+	jsonString := "{\"abc\":0.0001}"
+	result := GetFloatConfigurationFromJson(jsonString, "abc", 0.1)
+	assert := assert.New(t)
+	assert.Equal(0.0001, result)
+}
+
+/* Validates default config is returned for invalid json */
+func Test_GetFloatConfigurationFromJson_ReturnsDefaultValueForInvalidJson(t *testing.T) {
+	jsonString := "{\"abc\";abc}"
+	result := GetFloatConfigurationFromJson(jsonString, "abc", 0.1)
+	assert := assert.New(t)
+	assert.Equal(0.1, result)
+}
+
+/* Validates default config is returned for an empty json */
+func Test_GetFloatConfigurationFromJson_ReturnsDefaultValueForEmptyJson(t *testing.T) {
+	jsonString := ""
+	result := GetFloatConfigurationFromJson(jsonString, "abc", 0.1)
+	assert := assert.New(t)
+	assert.Equal(0.1, result)
+}
+
+/* Validates default config is returned for a missing config key */
+func Test_GetFloatConfigurationFromJson_ReturnsDefaultValueForMissingConfigKey(t *testing.T) {
+	jsonString := "{\"abc\":0.0001}"
+	result := GetFloatConfigurationFromJson(jsonString, "xyz", 0.1)
+	assert := assert.New(t)
+	assert.Equal(0.1, result)
+}
+
+/* Validates default value is returned for invalid config value type */
+func Test_GetFloatConfigurationFromJson_ReturnsDefaultValueForInvalidConfigValueType(t *testing.T) {
+	jsonString := "{\"abc\":abc}"
+	result := GetFloatConfigurationFromJson(jsonString, "abc", 0.1)
+	assert := assert.New(t)
+	assert.Equal(0.1, result)
+}
