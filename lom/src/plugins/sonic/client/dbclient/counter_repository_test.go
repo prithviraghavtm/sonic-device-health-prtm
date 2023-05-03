@@ -267,7 +267,7 @@ func Test_isInterfaceActive_ReturnsTrueForActiveInterface(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.isInterfaceActive(ethernet1)
+    result, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.Equal(t, nil, err, "err is exptected to be nil")
     assert.True(t, result, "result is exptected to be true")
 }
@@ -281,7 +281,7 @@ func Test_isInterfaceActive_ReturnsFalseForInActiveInterface(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.isInterfaceActive(ethernet1)
+    result, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.Equal(t, nil, err, "err is exptected to be nil")
     assert.False(t, result, "result is exptected to be False")
 }
@@ -294,7 +294,7 @@ func Test_isInterfaceActive_ReturnsFalseWhenRedisCallFails(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.isInterfaceActive(ethernet1)
+    result, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.NotEqual(t, nil, err, "err is exptected to be nil")
     assert.False(t, result, "result is exptected to be False")
 }

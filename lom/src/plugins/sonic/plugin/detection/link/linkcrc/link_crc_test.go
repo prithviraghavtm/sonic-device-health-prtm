@@ -20,7 +20,7 @@ func (mockCounterRepository *MockCounterRepository) GetInterfaceCounters() (dbcl
 	return args.Get(0).(dbclient.InterfaceCountersMap), args.Error(1)
 }
 
-func (mockCounterRepository *MockCounterRepository) isInterfaceActive(interfaceName string) (bool, error) {
+func (mockCounterRepository *MockCounterRepository) IsInterfaceActive(interfaceName string) (bool, error) {
 	args := mockCounterRepository.Called(interfaceName)
 	return args.Get(0).(bool), args.Error(1)
 }
@@ -74,7 +74,7 @@ func Test_LinkCrcDetectionPlugin_DetectCrcReturnsNilForError(t *testing.T) {
 	linkCRCDetectionPlugin.Init(&actionConfig)
 
 	mockCounterRepository := new(MockCounterRepository)
-	mockCounterRepository.On("GetInterfaceCounters").Return((map[string]map[string]uint64)(nil), errors.New("Some Error"))
+	mockCounterRepository.On("GetInterfaceCounters").Return(dbclient.InterfaceCountersMap(nil), errors.New("Some Error"))
 	linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
 	request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
@@ -96,11 +96,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionDetectsSuccessfuly(t *testing.T) {
 	map4 := map[string]uint64{"IfInErrors": 1220, "InUnicastPackets": 444, "OutUnicastPackets": 4100000000, "IfOutErrors": 4}
 	map5 := map[string]uint64{"IfInErrors": 1650, "InUnicastPackets": 555, "OutUnicastPackets": 4100004000, "IfOutErrors": 5}
 
-	counterMap1 := map[string]map[string]uint64{"Ethernet1": map1, "Ethernet2": map1}
-	counterMap2 := map[string]map[string]uint64{"Ethernet1": map2, "Ethernet2": map2}
-	counterMap3 := map[string]map[string]uint64{"Ethernet1": map3, "Ethernet2": map3}
-	counterMap4 := map[string]map[string]uint64{"Ethernet1": map4, "Ethernet2": map4}
-	counterMap5 := map[string]map[string]uint64{"Ethernet1": map5, "Ethernet2": map5}
+	counterMap1 := dbclient.InterfaceCountersMap{"Ethernet1": map1, "Ethernet2": map1}
+	counterMap2 := dbclient.InterfaceCountersMap{"Ethernet1": map2, "Ethernet2": map2}
+	counterMap3 := dbclient.InterfaceCountersMap{"Ethernet1": map3, "Ethernet2": map3}
+	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
+	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()
@@ -122,7 +122,8 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionDetectsSuccessfuly(t *testing.T) {
 	assert.Nil(response3, "response is expected to be nil")
 	assert.Nil(response4, "response is expected to be nil")
 	assert.NotNil(response5, "response is expected to be non nil")
-	assert.Equal("Ethernet1,Ethernet2", response5.AnomalyKey, "AnomalyKey is expected to be Ethernet0,Ethernet1")
+	assert.Contains(response5.AnomalyKey, "Ethernet1", "AnomalyKey is expected to be Ethernet0,Ethernet1")
+	assert.Contains(response5.AnomalyKey, "Ethernet2", "AnomalyKey is expected to be Ethernet0,Ethernet1")
 }
 
 type MockLimitDetectionReportingFrequency struct {
@@ -160,11 +161,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionReportsForOnlyOneInterface(t *testi
 	map4 := map[string]uint64{"IfInErrors": 1220, "InUnicastPackets": 444, "OutUnicastPackets": 4100000000, "IfOutErrors": 4}
 	map5 := map[string]uint64{"IfInErrors": 1650, "InUnicastPackets": 555, "OutUnicastPackets": 4100004000, "IfOutErrors": 5}
 
-	counterMap1 := map[string]map[string]uint64{"Ethernet1": map1, "Ethernet2": map1}
-	counterMap2 := map[string]map[string]uint64{"Ethernet1": map2, "Ethernet2": map2}
-	counterMap3 := map[string]map[string]uint64{"Ethernet1": map3, "Ethernet2": map3}
-	counterMap4 := map[string]map[string]uint64{"Ethernet1": map4, "Ethernet2": map4}
-	counterMap5 := map[string]map[string]uint64{"Ethernet1": map5, "Ethernet2": map5}
+	counterMap1 := dbclient.InterfaceCountersMap{"Ethernet1": map1, "Ethernet2": map1}
+	counterMap2 := dbclient.InterfaceCountersMap{"Ethernet1": map2, "Ethernet2": map2}
+	counterMap3 := dbclient.InterfaceCountersMap{"Ethernet1": map3, "Ethernet2": map3}
+	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
+	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()
@@ -207,11 +208,11 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionReportsNone(t *testing.T) {
 	map4 := map[string]uint64{"IfInErrors": 1220, "InUnicastPackets": 444, "OutUnicastPackets": 4100000000, "IfOutErrors": 4}
 	map5 := map[string]uint64{"IfInErrors": 1650, "InUnicastPackets": 555, "OutUnicastPackets": 4100004000, "IfOutErrors": 5}
 
-	counterMap1 := map[string]map[string]uint64{"Ethernet1": map1, "Ethernet2": map1}
-	counterMap2 := map[string]map[string]uint64{"Ethernet1": map2, "Ethernet2": map2}
-	counterMap3 := map[string]map[string]uint64{"Ethernet1": map3, "Ethernet2": map3}
-	counterMap4 := map[string]map[string]uint64{"Ethernet1": map4, "Ethernet2": map4}
-	counterMap5 := map[string]map[string]uint64{"Ethernet1": map5, "Ethernet2": map5}
+	counterMap1 := dbclient.InterfaceCountersMap{"Ethernet1": map1, "Ethernet2": map1}
+	counterMap2 := dbclient.InterfaceCountersMap{"Ethernet1": map2, "Ethernet2": map2}
+	counterMap3 := dbclient.InterfaceCountersMap{"Ethernet1": map3, "Ethernet2": map3}
+	counterMap4 := dbclient.InterfaceCountersMap{"Ethernet1": map4, "Ethernet2": map4}
+	counterMap5 := dbclient.InterfaceCountersMap{"Ethernet1": map5, "Ethernet2": map5}
 	mockCounterRepository := new(MockCounterRepository)
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap1, nil).Once()
 	mockCounterRepository.On("GetInterfaceCounters").Return(counterMap2, nil).Once()

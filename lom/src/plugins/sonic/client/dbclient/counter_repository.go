@@ -36,7 +36,7 @@ var interfaceToOidMapping map[string]string
 
 type CounterRepositoryInterface interface {
     GetInterfaceCounters() (InterfaceCountersMap, error)
-    isInterfaceActive(interfaceName string) (bool, error)
+    IsInterfaceActive(interfaceName string) (bool, error)
 }
 
 /*
@@ -56,7 +56,7 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
         }
 
     for interfaceName, interfaceOid := range interfaceToOidMapping {
-        isInterfaceActive, err := counterRepository.isInterfaceActive(interfaceName)
+        isInterfaceActive, err := counterRepository.IsInterfaceActive(interfaceName)
         if err != nil {
             return nil, err
         }
@@ -94,7 +94,7 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
 }
 
 /* Returns true if an interface's oper and admin status is up, else false. */
-func (counterRepository *CounterRepository) isInterfaceActive(interfaName string) (bool, error) {
+func (counterRepository *CounterRepository) IsInterfaceActive(interfaName string) (bool, error) {
     interfaceStatusKey := port_table_redis_key + interfaName
     fields := []string{admin_status_field, oper_status_field}
     result, err := counterRepository.RedisProvider.HmGet(APPL_DB_ID, interfaceStatusKey, fields)
