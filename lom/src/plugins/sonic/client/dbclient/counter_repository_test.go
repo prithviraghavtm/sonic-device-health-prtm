@@ -23,7 +23,8 @@ const (
         SAI_PORT_STAT_IF_IN_ERRORS      = "SAI_PORT_STAT_IF_IN_ERRORS"
         SAI_PORT_STAT_IF_IN_UCAST_PKTS  = "SAI_PORT_STAT_IF_IN_UCAST_PKTS"
         SAI_PORT_STAT_IF_OUT_UCAST_PKTS = "SAI_PORT_STAT_IF_OUT_UCAST_PKTS"
-        COUNTERS_PORT_NAME_MAP          = "COUNTERS_PORT_NAME_MAP"
+        SAI_PORT_STAT_IF_OUT_ERRORS     = "SAI_PORT_STAT_IF_OUT_ERRORS"
+	COUNTERS_PORT_NAME_MAP          = "COUNTERS_PORT_NAME_MAP"
         ADMIN_STATUS_FIELD              = "admin_status"
         OPER_STATUS_FIELD               = "oper_status"
         PORT_TABLE                      = "PORT_TABLE:"
@@ -47,7 +48,7 @@ func convertStringToInterfaceType(strs []string) []interface{} {
 }
 
 func validateOrderOfFields(fields []string) bool {
-        return fields[0] == SAI_PORT_STAT_IF_IN_ERRORS && fields[1] == SAI_PORT_STAT_IF_IN_UCAST_PKTS && fields[2] == SAI_PORT_STAT_IF_OUT_UCAST_PKTS
+        return fields[0] == SAI_PORT_STAT_IF_IN_ERRORS && fields[1] == SAI_PORT_STAT_IF_IN_UCAST_PKTS && fields[2] == SAI_PORT_STAT_IF_OUT_UCAST_PKTS && fields[3] == SAI_PORT_STAT_IF_OUT_ERRORS
 }
 
 type MockRedisProvider struct {
@@ -73,16 +74,16 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
         ifStatuses := []string{"up", "up"}
         (mockRedisProvider).On(HmGetMethod, 0, mock.Anything, mock.Anything).Return(convertStringToInterfaceType(ifStatuses), nil)
 
-        strs := []string{"110", "111", "112"}
+        strs := []string{"110", "111", "112", "113"}
         counters := convertStringToInterfaceType(strs)
 
         mockRedisProvider.On(HmGetMethod, 2, ethernet1_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters, nil)
 
-        strs1 := []string{"210", "211", "212"}
+        strs1 := []string{"210", "211", "212", "213"}
         counters1 := convertStringToInterfaceType(strs1)
         mockRedisProvider.On(HmGetMethod, 2, ethernet2_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters1, nil)
 
-        strs2 := []string{"310", "311", "312"}
+        strs2 := []string{"310", "311", "312", "313"}
         counters2 := convertStringToInterfaceType(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters2, nil)
 
@@ -100,12 +101,15 @@ func Test_GetInterfaceCounters_ReturnsAllCountersSuccessfuly(t *testing.T) {
         assert.Equal(uint64(110), result[ethernet1]["IfInErrors"], "Ehternet1's IfInErrors counter is expected to be 110")
         assert.Equal(uint64(111), result[ethernet1]["InUnicastPackets"], "Ehternet1's InUnicastPackets counter is expected to be 111")
         assert.Equal(uint64(112), result[ethernet1]["OutUnicastPackets"], "Ehternet1's OutUnicastPackets counter is expected to be 112")
-        assert.Equal(uint64(210), result[ethernet2]["IfInErrors"], "Ehternet2's IfInErrors counter is expected to be 210")
+        assert.Equal(uint64(113), result[ethernet1]["IfOutErrors"], "Ehternet1's IfOutErrors counter is expected to be 113")
+	assert.Equal(uint64(210), result[ethernet2]["IfInErrors"], "Ehternet2's IfInErrors counter is expected to be 210")
         assert.Equal(uint64(211), result[ethernet2]["InUnicastPackets"], "Ehternet2's InUnicastPackets counter is expected to be 211")
         assert.Equal(uint64(212), result[ethernet2]["OutUnicastPackets"], "Ehternet2's OutUnicastPackets counter is expected to be 212")
-        assert.Equal(uint64(310), result[ethernet3]["IfInErrors"], "Ehternet3's IfInErrors counter is expected to be 310")
+        assert.Equal(uint64(213), result[ethernet2]["IfOutErrors"], "Ehternet2's IfOutErrors counter is expected to be 213")
+	assert.Equal(uint64(310), result[ethernet3]["IfInErrors"], "Ehternet3's IfInErrors counter is expected to be 310")
         assert.Equal(uint64(311), result[ethernet3]["InUnicastPackets"], "Ehternet3's InUnicastPackets counter is expected to be 311")
         assert.Equal(uint64(312), result[ethernet3]["OutUnicastPackets"], "Ehternet3's OutUnicastPackets counter is expected to be 312")
+	assert.Equal(uint64(313), result[ethernet3]["IfOutErrors"], "Ehternet3's IfOutErrors counter is expected to be 313")
 }
 
 /* Test GetInterfaceCounters returns error when HGetAll method returns error */
@@ -135,11 +139,11 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenHmGetFails(t *testing.T) {
         ifStatuses := []string{"up", "up"}
 
         (mockRedisProvider).On(HmGetMethod, 0, mock.Anything, mock.Anything).Return(convertStringToInterfaceType(ifStatuses), nil)
-        strs := []string{"110", "111", "112"}
+        strs := []string{"110", "111", "112", "113"}
         counters := convertStringToInterfaceType(strs)
         mockRedisProvider.On(HmGetMethod, 2, ethernet1_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters, nil)
         mockRedisProvider.On(HmGetMethod, 2, ethernet2_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(([]interface{})(nil), errors.New("HmGet execution failed"))
-        strs2 := []string{"310", "311", "312"}
+        strs2 := []string{"310", "311", "312", "313"}
         counters2 := convertStringToInterfaceType(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
 
@@ -164,15 +168,15 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenIfInErrorsCastingFails(t *testing
         ifStatuses := []string{"up", "up"}
         (mockRedisProvider).On(HmGetMethod, 0, mock.Anything, mock.Anything).Return(convertStringToInterfaceType(ifStatuses), nil)
 
-        strs := []string{"abc", "111", "112"}
+        strs := []string{"abc", "111", "112", "113"}
         counters := convertStringToInterfaceType(strs)
         mockRedisProvider.On(HmGetMethod, 2, ethernet1_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters, nil)
 
-        strs1 := []string{"210", "211", "212"}
+        strs1 := []string{"210", "211", "212", "213"}
         counters1 := convertStringToInterfaceType(strs1)
         mockRedisProvider.On(HmGetMethod, 2, ethernet2_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters1, nil)
 
-        strs2 := []string{"310", "311", "312"}
+        strs2 := []string{"310", "311", "312", "313"}
         counters2 := convertStringToInterfaceType(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
 
@@ -197,15 +201,15 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenInUnicastPacketsCastingFails(t *t
         ifStatuses := []string{"up", "up"}
         (mockRedisProvider).On(HmGetMethod, 0, mock.Anything, mock.Anything).Return(convertStringToInterfaceType(ifStatuses), nil)
 
-        strs := []string{"110", "abc", "112"}
+        strs := []string{"110", "abc", "112", "113"}
         counters := convertStringToInterfaceType(strs)
         mockRedisProvider.On(HmGetMethod, 2, ethernet1_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters, nil)
 
-        strs1 := []string{"210", "211", "212"}
+        strs1 := []string{"210", "211", "212", "213"}
         counters1 := convertStringToInterfaceType(strs1)
         mockRedisProvider.On(HmGetMethod, 2, ethernet2_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters1, nil)
 
-        strs2 := []string{"310", "311", "312"}
+        strs2 := []string{"310", "311", "312", "313"}
         counters2 := convertStringToInterfaceType(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
 
@@ -230,15 +234,15 @@ func Test_GetInterfaceCounters_ReturnsErrorWhenOutUnicastPacketsCastingFails(t *
         ifStatuses := []string{"up", "up"}
         (mockRedisProvider).On(HmGetMethod, 0, mock.Anything, mock.Anything).Return(convertStringToInterfaceType(ifStatuses), nil)
 
-        strs := []string{"110", "111", "abc"}
+        strs := []string{"110", "111", "abc", "113"}
         counters := convertStringToInterfaceType(strs)
         mockRedisProvider.On(HmGetMethod, 2, ethernet1_redis_key, mock.MatchedBy(validateOrderOfFields)).Return(counters, nil)
 
-        strs1 := []string{"210", "211", "212"}
+        strs1 := []string{"210", "211", "212", "213"}
         counters1 := convertStringToInterfaceType(strs1)
         mockRedisProvider.On(HmGetMethod, 2, ethernet2_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters1, nil)
 
-        strs2 := []string{"310", "311", "312"}
+        strs2 := []string{"310", "311", "312", "313"}
         counters2 := convertStringToInterfaceType(strs2)
         mockRedisProvider.On(HmGetMethod, 2, ethernet3_redis_key, mock.MatchedBy(validateOrderOfFields)).Maybe().Return(counters2, nil)
 

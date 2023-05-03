@@ -11,6 +11,7 @@ const (
     counters_port_name_map_redis_key      string = "COUNTERS_PORT_NAME_MAP"
     counters_db_table_name                string = "COUNTERS:"
     sai_port_stat_if_in_errors_field      string = "SAI_PORT_STAT_IF_IN_ERRORS"
+    sai_port_stat_if_out_errors_field     string = "SAI_PORT_STAT_IF_OUT_ERRORS"
     sai_port_stat_if_in_ucast_pkts_field  string = "SAI_PORT_STAT_IF_IN_UCAST_PKTS"
     sai_port_stat_if_out_ucast_pkts_field string = "SAI_PORT_STAT_IF_OUT_UCAST_PKTS"
     atoi_base                                int = 10
@@ -63,7 +64,7 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
 
         if isInterfaceActive {
             interfaceCountersKey := counters_db_table_name + interfaceOid
-            fields := []string{sai_port_stat_if_in_errors_field, sai_port_stat_if_in_ucast_pkts_field, sai_port_stat_if_out_ucast_pkts_field}
+            fields := []string{sai_port_stat_if_in_errors_field, sai_port_stat_if_in_ucast_pkts_field, sai_port_stat_if_out_ucast_pkts_field, sai_port_stat_if_out_errors_field}
             result, err := counterRepository.RedisProvider.HmGet(COUNTER_DB_ID, interfaceCountersKey, fields)
 
             if err != nil {
@@ -85,7 +86,12 @@ func (counterRepository *CounterRepository) GetInterfaceCounters() (InterfaceCou
                 return nil, errors.New(fmt.Sprintf("OutUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
 
-            var interfaceCounters = map[string]uint64{IF_IN_ERRORS_COUNTER_KEY: ifInErrors, IN_UNICAST_PACKETS_COUNTER_KEY: inUnicastPackets, OUT_UNICAST_PACKETS_COUNTER_KEY: outUnicastPackets}
+	    ifOutErrors, err := strconv.ParseUint(result[3].(string), atoi_base, uint_bit_size)
+	    if err != nil {
+		return nil, errors.New(fmt.Sprintf("IfOutErrors counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
+	    }
+
+            var interfaceCounters = map[string]uint64{IF_IN_ERRORS_COUNTER_KEY: ifInErrors, IN_UNICAST_PACKETS_COUNTER_KEY: inUnicastPackets, OUT_UNICAST_PACKETS_COUNTER_KEY: outUnicastPackets, IF_OUT_ERRORS_COUNTER_KEY: ifOutErrors}
             interfaceCountersMap[interfaceName] = interfaceCounters
         }
     }
