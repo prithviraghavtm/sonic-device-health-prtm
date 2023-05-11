@@ -300,7 +300,7 @@ func Test_PeriodicDetectionPluginUtil_SendsHeartbeat(t *testing.T) {
 /* Validates that the request is aborted on shutdown */
 func Test_PeriodicDetectionPluginUtil_EnsureRequestAbortedOnShutdown(t *testing.T) {
 	var dummyPlugin Plugin
-	testRequestFrequency = 1
+	testRequestFrequency = 2
 	dummyPlugin = &DummyPlugin{}
 	actionConfig := lomcommon.ActionCfg_t{HeartbeatInt: 3600}
 	dummyPlugin.Init(&actionConfig)
@@ -313,6 +313,8 @@ func Test_PeriodicDetectionPluginUtil_EnsureRequestAbortedOnShutdown(t *testing.
 	response := dummyPlugin.Request(pluginHBChan, request)
 	assert := assert.New(t)
 	assert.NotNil(response, "response is expected to be non nil")
+	// Give shutdown 2 seconds to finish its complete execution.
+	time.Sleep(2 * time.Second)	
 	assert.Equal(2, dummyPlugin.(*DummyPlugin).testValue1, "someValue is expected to be 2")
 	assert.Equal(3, dummyPlugin.(*DummyPlugin).testValue2, "otherValue is expected to be 3")
 	assert.True(dummyPlugin.(*DummyPlugin).requestAborted, "requestAborted is expected to be true")
