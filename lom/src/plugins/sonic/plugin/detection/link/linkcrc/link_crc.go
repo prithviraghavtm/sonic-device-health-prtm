@@ -77,6 +77,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
 
 /* Executes the crc detection logic. isExecutionHealthy is marked false when there is an issue in detecting the anomaly 
    This is the logic that is periodically executed to detect crc anoamlies */
+// TODO: Categorize errors. Only in permanent errors, isExecutionHealthy needs to be set as false
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool) *lomipc.ActionResponseData {
 	lomcommon.LogInfo(fmt.Sprintf(link_crc_prefix + "ExecuteCrcDetection Starting"))
 	ifAnyInterfaceHasCrcError := false

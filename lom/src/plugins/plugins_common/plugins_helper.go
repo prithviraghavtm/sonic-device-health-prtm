@@ -171,6 +171,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName 
 	return nil
 }
 
+// TODO: Enhance logic in this method to immediately start ticker, ensure hearbeat and request are not blocked by each other.
 /* This method is promoted to the plugin Periodically invokes detection logic and send heartbeat as well. Honors shutdown when shutdown is invoked on plugin */
 func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 	hbchan chan PluginHeartBeat,
@@ -185,8 +186,8 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 	for {
 		select {
 		case <-heartBeatTicker.C:
-                     /* Send heartbeat only when the request is healthy */
-		     if isExecutionHealthy {
+                     /* Send heartbeat only when the request is healthy and is not aborted yet */
+		     if !periodicDetectionPluginUtil.requestAborted && isExecutionHealthy {
 			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.PluginName, EpochTime: time.Now().Unix()}
 			hbchan <- pluginHeartBeat
                      }
