@@ -99,6 +99,8 @@ func (counterRepository *CounterRepository) GetCountersForActiveInterfaces() (In
 }
 
 /* Returns true if an interface's oper and admin status is up, else false. */
+// TODO: Consider subscribing to interface statuses in redis and store those details locally. Use those details in real time to validate if interface
+// is up or down.
 func (counterRepository *CounterRepository) IsInterfaceActive(interfaName string) (bool, error) {
     interfaceStatusKey := port_table_redis_key + interfaName
     fields := []string{admin_status_field, oper_status_field}

@@ -99,15 +99,15 @@ func (fxdSizeRollingWindow *FixedSizeRollingWindow[T]) Initialize(maxSize int) e
 
 /* Adds element to rolling window */
 func (fxdSizeRollingWindow *FixedSizeRollingWindow[T]) AddElement(value T) {
-        if fxdSizeRollingWindow.orderedDataPoints.Len() == 0 || fxdSizeRollingWindow.orderedDataPoints.Len() < fxdSizeRollingWindow.maxRollingWindowSize {
+        if fxdSizeRollingWindow.orderedDataPoints.Len() < fxdSizeRollingWindow.maxRollingWindowSize {
                 fxdSizeRollingWindow.orderedDataPoints.PushBack(value)
-        } else if fxdSizeRollingWindow.orderedDataPoints.Len() == fxdSizeRollingWindow.maxRollingWindowSize {
-                // Remove first element.
-                element := fxdSizeRollingWindow.orderedDataPoints.Front()
-                fxdSizeRollingWindow.orderedDataPoints.Remove(element)
-                // Add the input element into the back.
-                fxdSizeRollingWindow.orderedDataPoints.PushBack(value)
-        }
+                return
+	}
+        // Remove first element.
+        element := fxdSizeRollingWindow.orderedDataPoints.Front()
+        fxdSizeRollingWindow.orderedDataPoints.Remove(element)
+        // Add the input element into the back.
+        fxdSizeRollingWindow.orderedDataPoints.PushBack(value)
 }
 
 /* Gets all current elements as list */
