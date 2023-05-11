@@ -7,7 +7,6 @@ import (
     "os"
     "path/filepath"
     "sort"
-    "fmt"
 )
 
 const (
@@ -662,26 +661,7 @@ func InitConfigPath(path string) error {
 
 /* Gets settings of int type from json string if present. Else returns defaultValue */
 func GetIntConfigurationFromJson(jsonString string, configurationKey string, defaultValue int) int {
-	if jsonString == "" {
-		return defaultValue
-	}
-	var resultMap map[string]interface{}
-	err := json.Unmarshal([]byte(jsonString), &resultMap)
-	if err != nil {
-		LogError(fmt.Sprintf("Error unmarshalling jsonString %s for key %s", jsonString, configurationKey))
-		return defaultValue
-	}
-	configurationVal, ok := resultMap[configurationKey]
-	if !ok {
-		LogError(fmt.Sprintf("key %s not present in json string %s", configurationKey, jsonString))
-		return defaultValue
-	}
-	configurationValInt, ok := configurationVal.(float64)
-	if !ok {
-		LogError(fmt.Sprintf("key %s not of type int in json string %s", configurationKey, jsonString))
-		return defaultValue
-	}
-	return int(configurationValInt)
+        return int(GetFloatConfigurationFromJson(jsonString, configurationKey, float64(defaultValue)))
 }
 
 /* Gets settings of float64 type from json string if present. Else returns defaultValue */
@@ -692,17 +672,17 @@ func GetFloatConfigurationFromJson(jsonString string, configurationKey string, d
 	var resultMap map[string]interface{}
 	err := json.Unmarshal([]byte(jsonString), &resultMap)
 	if err != nil {
-		LogError(fmt.Sprintf("Error unmarshalling jsonString %s for key %s", jsonString, configurationKey))
+		LogError("Error unmarshalling jsonString %s for key %s", jsonString, configurationKey)
 		return defaultValue
 	}
 	configurationVal, ok := resultMap[configurationKey]
 	if !ok {
-		LogError(fmt.Sprintf("key %s not present in json string %s", configurationKey, jsonString))
+		LogError("key %s not present in json string %s", configurationKey, jsonString)
 		return defaultValue
 	}
 	configurationValFloat64, ok := configurationVal.(float64)
 	if !ok {
-		LogError(fmt.Sprintf("key %s not of type float64 in json string %s", configurationKey, jsonString))
+		LogError("key %s not of type float64 in json string %s", configurationKey, jsonString)
 		return defaultValue
 	}
 	return configurationValFloat64

@@ -32,6 +32,7 @@ const (
 	min_outliers_for_detection_config_key    = "MinOutliersForDetection"
 	look_back_period_in_secs_config_key      = "LookBackPeriodInSecs"
 	plugin_version                           = "1.0.0.0"
+	link_crc_prefix                          = "link_crc: "
 )
 
 var ifInErrorsDiffMinValue int
@@ -68,7 +69,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
 	linkCrcDetectionPlugin.reportingFreqLimiter = plugins_common.GetDefaultDetectionFrequencyLimiter()
 	err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
 	if err != nil {
-		lomcommon.LogError(fmt.Sprintf("Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
+		lomcommon.LogError(fmt.Sprintf(link_crc_prefix + "Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
 		return err
 	}
 	return nil
@@ -77,13 +78,13 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
 /* Executes the crc detection logic. isExecutionHealthy is marked false when there is an issue in detecting the anomaly 
    This is the logic that is periodically executed to detect crc anoamlies */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool) *lomipc.ActionResponseData {
-	lomcommon.LogInfo(fmt.Sprintf("executeCrcDetection Starting"))
+	lomcommon.LogInfo(fmt.Sprintf(link_crc_prefix + "ExecuteCrcDetection Starting"))
 	ifAnyInterfaceHasCrcError := false
 	var listOfInterfacesWithCrcError strings.Builder
 	currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForActiveInterfaces()
 	if err != nil {
 		/* If redis call fails, there can be no detection that can be performed. Mark it unhealthy */
-		lomcommon.LogError("Error fetching interface counters for LinkCrc detection")
+		lomcommon.LogError(link_crc_prefix + "Error fetching interface counters for LinkCrc detection")
 		*isExecutionHealthy = false
 		return nil
 	}
@@ -91,14 +92,14 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
 	if len(currentInterfaceCounters) == 0 {
 		/* currentInterfaceCounters is either nil or 0 which is invalid. Mark it unhealthy */
 		*isExecutionHealthy = false
-		lomcommon.LogError("interface counters is 0")
+		lomcommon.LogError(link_crc_prefix + "interface counters is 0")
 		return nil
 	}
 
         *isExecutionHealthy = true
 	for interfaceName, interfaceCounters := range currentInterfaceCounters {
 		if interfaceCounters == nil {
-			lomcommon.LogError(fmt.Sprintf("Nil interface Counters for %s", interfaceName))
+			lomcommon.LogError(fmt.Sprintf(link_crc_prefix + "Nil interface Counters for %s", interfaceName))
 			*isExecutionHealthy = false
 			continue
 		}
@@ -128,7 +129,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
 	}
 
 	if ifAnyInterfaceHasCrcError {
-		lomcommon.LogInfo("executeCrcDetection Anomaly Detected")
+		lomcommon.LogInfo(link_crc_prefix + "executeCrcDetection Anomaly Detected")
 		return plugins_common.GetResponse(request, strings.TrimSuffix(listOfInterfacesWithCrcError.String(), ","), "Detected Crc", plugins_common.ResultCodeSuccess, plugins_common.ResultStringSuccess)
 	}
 	return nil
@@ -181,8 +182,7 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
 
 	// validate if all diff counters are valid.
 	if !linkCrcDetector.validateCountersDiff(linkCrcDetector.latestCounters, currentCounters) {
-		// Make this alertable.
-		// LogError(fmt.Sprintf("Invalid counters"))
+		lomcommon.LogError(fmt.Sprintf(link_crc_prefix + "Invalid counters"))
 		// TODO: Should we also reset latestCounters when the its stale ?
 		return false
 	}
