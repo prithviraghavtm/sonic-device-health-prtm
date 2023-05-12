@@ -22,9 +22,9 @@ type ReportingDetails struct {
 }
 
 const (
-	initial_detection_reporting_freq_in_mins    int = 5
-	subsequent_detection_reporting_freq_in_mins int = 60
-	initial_detection_reporting_max_count       int = 12
+	initial_detection_reporting_freq_in_mins    = "INITIAL_DETECTION_REPORTING_FREQ_IN_MINS"
+	subsequent_detection_reporting_freq_in_mins = "SUBSEQUENT_DETECTION_REPORTING_FREQ_IN_MINS"
+	initial_detection_reporting_max_count       = "INITIAL_DETECTION_REPORTING_MAX_COUNT"
 )
 
 type PluginReportingFrequencyLimiter struct {
@@ -77,7 +77,7 @@ func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ResetCac
 /* Factory method to get default detection reporting limiter instance */
 func GetDefaultDetectionFrequencyLimiter() PluginReportingFrequencyLimiterInterface {
 	detectionFreqLimiter := &PluginReportingFrequencyLimiter{}
-	detectionFreqLimiter.Initialize(initial_detection_reporting_freq_in_mins, subsequent_detection_reporting_freq_in_mins, initial_detection_reporting_max_count)
+        detectionFreqLimiter.Initialize(lomcommon.GetConfigMgr().GetGlobalCfgInt(initial_detection_reporting_freq_in_mins), lomcommon.GetConfigMgr().GetGlobalCfgInt(subsequent_detection_reporting_freq_in_mins), lomcommon.GetConfigMgr().GetGlobalCfgInt(initial_detection_reporting_max_count))
 	return detectionFreqLimiter
 }
 

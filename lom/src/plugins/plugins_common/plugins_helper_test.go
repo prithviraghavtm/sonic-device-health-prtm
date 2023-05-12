@@ -9,6 +9,14 @@ import (
 	"lom/src/lib/lomipc"
 )
 
+func init() {
+        configFiles := &lomcommon.ConfigFiles_t{}
+        configFiles.GlobalFl = "../../pluginmgr/pluginmgr_test/globals_conf.json"  
+        configFiles.ActionsFl = "../../pluginmgr/pluginmgr_test/actions_conf.json" 
+        configFiles.BindingsFl = "../../pluginmgr/pluginmgr_test/actions_conf.json"
+        configFiles.ProcsFl = "../../pluginmgr/pluginmgr_test/proc_conf.json"
+        lomcommon.InitConfigMgr(configFiles)
+}
 
 /* Validate that reportingLimiter reports successfuly for first time for an anomaly key */
 func Test_DetectionReportingFreqLimiter_ReportsSuccessfulyForFirstTime(t *testing.T) {
