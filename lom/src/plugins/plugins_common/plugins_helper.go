@@ -6,6 +6,7 @@ import (
 	"fmt"
         "lom/src/lib/lomcommon"
         "lom/src/lib/lomipc"
+        "sync/atomic"
 )
 
 /* Interface for limiting reporting frequency of plugin */
@@ -139,7 +140,7 @@ type PeriodicDetectionPluginUtil struct {
 	requestFrequencyInSecs  int
 	heartBeatIntervalInSecs int
 	shutDownChannel         chan interface{}
-	requestAborted          bool
+	requestAborted          atomic.Bool
 	requestFunc             func(*lomipc.ActionRequestData, *bool) *lomipc.ActionResponseData
 	shutdownFunc            func() error
 	PluginName              string
@@ -162,7 +163,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName 
 	}
 	periodicDetectionPluginUtil.requestFrequencyInSecs = requestFrequencyInSecs
 	periodicDetectionPluginUtil.heartBeatIntervalInSecs = actionConfig.HeartbeatInt
-	periodicDetectionPluginUtil.requestAborted = false
+	periodicDetectionPluginUtil.requestAborted = atomic.Bool{}
 	periodicDetectionPluginUtil.shutDownChannel = make(chan interface{})
 	periodicDetectionPluginUtil.requestFunc = requestFunction
 	periodicDetectionPluginUtil.shutdownFunc = shutDownFunction
@@ -187,13 +188,13 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 		select {
 		case <-heartBeatTicker.C:
                      /* Send heartbeat only when the request is healthy and is not aborted yet */
-		     if !periodicDetectionPluginUtil.requestAborted && isExecutionHealthy {
+		     if !periodicDetectionPluginUtil.requestAborted.Load() && isExecutionHealthy {
 			pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.PluginName, EpochTime: time.Now().Unix()}
 			hbchan <- pluginHeartBeat
                      }
 		case <-detectionTicker.C:
                      /* Perform detection logic periodically */
-		     if !periodicDetectionPluginUtil.requestAborted {
+		     if !periodicDetectionPluginUtil.requestAborted.Load() {
 			response := periodicDetectionPluginUtil.requestFunc(request, &isExecutionHealthy)
 			    if response != nil {
 				return response
@@ -204,7 +205,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
                         /* Shutdown stops the periodic detection */
 			lomcommon.LogInfo(fmt.Sprintf("Aborting Request for (%s)", periodicDetectionPluginUtil.PluginName))
 			responseData := GetResponse(request, "", "", ResultCodeAborted, ResultStringFailure)
-			periodicDetectionPluginUtil.requestAborted = true
+			periodicDetectionPluginUtil.requestAborted.Store(true)
 			return responseData
 		}
 	}
@@ -216,7 +217,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Shutdown() error
 	close(periodicDetectionPluginUtil.shutDownChannel)
 	startTime := time.Now()
 	for {
-		if periodicDetectionPluginUtil.requestAborted {
+		if periodicDetectionPluginUtil.requestAborted.Load() {
 			break
 		}
 
