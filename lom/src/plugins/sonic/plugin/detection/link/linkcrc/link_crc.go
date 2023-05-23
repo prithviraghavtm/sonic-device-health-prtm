@@ -192,7 +192,6 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
     // validate if all diff counters are valid.
     if !linkCrcDetector.validateCountersDiff(linkCrcDetector.latestCounters, currentCounters) {
         lomcommon.LogError(fmt.Sprintf(link_crc_prefix + "Invalid counters"))
-        // TODO: Should we also reset latestCounters when the its stale ?
         return false
     }
 
