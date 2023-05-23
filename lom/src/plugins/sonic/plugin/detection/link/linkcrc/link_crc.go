@@ -9,6 +9,7 @@ import (
     "lom/src/plugins/sonic/client/dbclient"
     "strings"
     "time"
+    "context"
 )
 
 const (
@@ -77,12 +78,11 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
 
 /* Executes the crc detection logic. isExecutionHealthy is marked false when there is an issue in detecting the anomaly
    This is the logic that is periodically executed to detect crc anoamlies */
-// TODO: Categorize errors. Only in permanent errors, isExecutionHealthy needs to be set as false
-func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool) *lomipc.ActionResponseData {
+func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool, ctx context.Context) *lomipc.ActionResponseData {
     lomcommon.LogInfo(fmt.Sprintf(link_crc_prefix + "ExecuteCrcDetection Starting"))
     ifAnyInterfaceHasCrcError := false
     var listOfInterfacesWithCrcError strings.Builder
-    currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForActiveInterfaces()
+    currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForActiveInterfaces(ctx)
     if err != nil {
         /* If redis call fails, there can be no detection that can be performed. Mark it unhealthy */
         lomcommon.LogError(link_crc_prefix + "Error fetching interface counters for LinkCrc detection")
@@ -115,9 +115,17 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
             if linkCrcDetector.AddInterfaceCountersAndDetectCrc(interfaceCounters, time.Now().UTC()) {
                 /* Consider reporting only if it was not reported recently based on the rate limiter settings */
                 if linkCrcDetectionPlugin.reportingFreqLimiter.ShouldReport(interfaceName) {
-                    ifAnyInterfaceHasCrcError = true
-                    listOfInterfacesWithCrcError.WriteString(interfaceName)
-                    listOfInterfacesWithCrcError.WriteString(",")
+                    isIfActive, err := linkCrcDetectionPlugin.counterRepository.IsInterfaceActive(interfaceName)
+                    if err != nil {
+                        /* Log Error but still continue to report, assuming the link is up */
+                        lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Error getting link status from redis for interface %s. Err: %v", interfaceName, err))
+                    }
+
+                    if isIfActive {
+                        ifAnyInterfaceHasCrcError = true
+                        listOfInterfacesWithCrcError.WriteString(interfaceName)
+                        listOfInterfacesWithCrcError.WriteString(",")
+                    }
                 }
             } else {
                 // reset limiter freq when detection is false and the datapoints look valid.

@@ -2,6 +2,7 @@
 package dbclient
 
 import (
+    "context"
     "errors"
     "fmt"
     "strconv"
@@ -36,7 +37,7 @@ type InterfaceCountersMap map[string]map[string]uint64
 var interfaceToOidMapping map[string]string
 
 type CounterRepositoryInterface interface {
-    GetCountersForActiveInterfaces() (InterfaceCountersMap, error)
+    GetCountersForActiveInterfaces(ctx context.Context) (InterfaceCountersMap, error)
     IsInterfaceActive(interfaceName string) (bool, error)
 }
 
@@ -44,63 +45,50 @@ type CounterRepositoryInterface interface {
 Returns interface counters for all interfaces on the Sonic device.
 First it gets all oids for interfaces and then gets counters for each interface by performing redis hmGet calls.
 */
-func (counterRepository *CounterRepository) GetCountersForActiveInterfaces() (InterfaceCountersMap, error) {
+func (counterRepository *CounterRepository) GetCountersForActiveInterfaces(ctx context.Context) (InterfaceCountersMap, error) {
     var interfaceCountersMap = make(InterfaceCountersMap)
     var err error
-
     if interfaceToOidMapping == nil {
         interfaceToOidMapping, err = counterRepository.RedisProvider.HGetAll(COUNTER_DB_ID, counters_port_name_map_redis_key)
         if err != nil {
             return nil, errors.New(fmt.Sprintf("HGetAll Failed. err: (%v)", err))
         }
     }
-
     for interfaceName, interfaceOid := range interfaceToOidMapping {
-        isInterfaceActive, err := counterRepository.IsInterfaceActive(interfaceName)
-        if err != nil {
-            return nil, err
-        }
-
-        if isInterfaceActive {
+        select {
+        case <-ctx.Done():
+            return nil, errors.New("counter_repository.GetCountersForActiveInterfaces aborted")
+        default:
             interfaceCountersKey := counters_db_table_name + interfaceOid
             fields := []string{sai_port_stat_if_in_errors_field, sai_port_stat_if_in_ucast_pkts_field, sai_port_stat_if_out_ucast_pkts_field, sai_port_stat_if_out_errors_field}
             result, err := counterRepository.RedisProvider.HmGet(COUNTER_DB_ID, interfaceCountersKey, fields)
-
             if err != nil {
                 return nil, errors.New(fmt.Sprintf("HmGet for key (%s) failed. err:(%v)", interfaceCountersKey, err))
             }
-
             ifInErrors, err := strconv.ParseUint(result[0].(string), atoi_base, uint_bit_size)
             if err != nil {
                 return nil, errors.New(fmt.Sprintf("IfInErrors counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
-
             inUnicastPackets, err := strconv.ParseUint(result[1].(string), atoi_base, uint_bit_size)
             if err != nil {
                 return nil, errors.New(fmt.Sprintf("InUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
-
             outUnicastPackets, err := strconv.ParseUint(result[2].(string), atoi_base, uint_bit_size)
             if err != nil {
                 return nil, errors.New(fmt.Sprintf("OutUnicastPackets counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
-
             ifOutErrors, err := strconv.ParseUint(result[3].(string), atoi_base, uint_bit_size)
             if err != nil {
                 return nil, errors.New(fmt.Sprintf("IfOutErrors counter ParseUint conversion failed for key (%s). err: (%v)", interfaceCountersKey, err))
             }
-
             var interfaceCounters = map[string]uint64{IF_IN_ERRORS_COUNTER_KEY: ifInErrors, IN_UNICAST_PACKETS_COUNTER_KEY: inUnicastPackets, OUT_UNICAST_PACKETS_COUNTER_KEY: outUnicastPackets, IF_OUT_ERRORS_COUNTER_KEY: ifOutErrors}
             interfaceCountersMap[interfaceName] = interfaceCounters
         }
     }
-
     return interfaceCountersMap, nil
 }
 
 /* Returns true if an interface's oper and admin status is up, else false. */
-// TODO: Consider subscribing to interface statuses in redis and store those details locally. Use those details in real time to validate if interface
-// is up or down.
 func (counterRepository *CounterRepository) IsInterfaceActive(interfaName string) (bool, error) {
     interfaceStatusKey := port_table_redis_key + interfaName
     fields := []string{admin_status_field, oper_status_field}
