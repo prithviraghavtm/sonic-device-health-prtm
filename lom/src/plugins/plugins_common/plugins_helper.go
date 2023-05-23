@@ -130,6 +130,11 @@ const (
     ResultStringFailure = "Failure"
 )
 
+const (
+    request_timeout_log_periodicity_in_secs = 3
+    plugin_prefix = "plugin_"
+)
+
 /*
 This util can be used by detection plugins which needs to detect anomalies periodically and send heartbeat to plugin manager.
 This util takes care of executing detection logic periodically and shutting down the request when shutdown is invoked on the plugin.
@@ -189,8 +194,10 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Init(pluginName 
     return nil
 }
 
-// TODO: Enhance logic in this method to immediately start ticker, ensure hearbeat and request are not blocked by each other.
-/* This method is promoted to the plugin Periodically invokes detection logic and send heartbeat as well. Honors shutdown when shutdown is invoked on plugin */
+/*
+This method immediately starts heartbeat and request execution.
+This method is promoted to the plugin. Honors shutdown when shutdown is invoked on plugin.
+*/
 func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
     hbchan chan PluginHeartBeat,
     request *lomipc.ActionRequestData) *lomipc.ActionResponseData {
@@ -202,9 +209,9 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
     pluginHeartBeat := PluginHeartBeat{PluginName: periodicDetectionPluginUtil.PluginName, EpochTime: time.Now().Unix()}
     hbchan <- pluginHeartBeat
 
-    go periodicDetectionPluginUtil.handleRequest(request)
+    lomcommon.GetGoroutineTracker().Start(plugin_prefix + periodicDetectionPluginUtil.PluginName, periodicDetectionPluginUtil.handleRequest, request)
     heartBeatTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.heartBeatIntervalInSecs) * time.Second)
-    timeoutLogTicker := time.NewTicker(3 * time.Second)
+    timeoutLogTicker := time.NewTicker(request_timeout_log_periodicity_in_secs * time.Second)
     defer heartBeatTicker.Stop()
     defer timeoutLogTicker.Stop()
 
