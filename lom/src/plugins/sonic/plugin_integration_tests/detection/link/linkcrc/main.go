@@ -8,10 +8,25 @@ import (
         "encoding/json"
 	"lom/src/plugins/plugins_common"
 	"time"
+        "lom/src/lib/lomcommon"
+        "lom/src/lib/lomipc"
+	"lom/src/plugins/sonic/plugin/detection/link/linkcrc"
 )
 
 func main() {
-MockRedisData()
+go MockRedisData()
+
+	linkCrcDetectionPlugin := linkcrc.LinkCRCDetectionPlugin{}
+	actionCfg := lomcommon.ActionCfg_t{Name: "link_crc_integration", Type: "detection", Timeout: 0, HeartbeatInt: 10, Disable: false, Mimic: false, ActionKnobs: ""}
+	linkCrcDetectionPlugin.Init(&actionCfg)
+	actionRequest := lomipc.ActionRequestData{Action: "link_crc_detection", InstanceId: "InstId", AnomalyInstanceId: "AnInstId", AnomalyKey: "", Timeout: 0}
+	pluginHBChan := make(chan plugins_common.PluginHeartBeat, 10)
+	go LogHeartBeat(pluginHBChan)
+	fmt.Println("Started HeartBeat Receiver")
+	time.Sleep(10 * time.Second)
+	response := linkCrcDetectionPlugin.Request(pluginHBChan, &actionRequest)
+	fmt.Println("Integration testing.Anomaly detection result: " + response.AnomalyKey)
+	time.Sleep(30 * time.Minute)
 
 }
 
@@ -44,13 +59,13 @@ func MockRedisData() error {
 	})
 
 	for datapointIndex := 0; datapointIndex < len(datapoints); datapointIndex++ {
-		for interfaceIndex := 0; interfaceIndex < len(os.Args); interfaceIndex++ {
+		for interfaceIndex := 0; interfaceIndex < len(os.Args) - 1; interfaceIndex++ {
 			_, err := client.HMSet(os.Args[interfaceIndex + 1], datapoints[datapointIndex]).Result()
 			if err != nil {
-				fmt.Println("Error mocking redis data for index %d and interface %d", datapointIndex, interfaceIndex)
+				fmt.Printf("Error mocking redis data for index %d and interface %d", datapointIndex, interfaceIndex)
 				return err
 			} else {
-				fmt.Println("Successfuly mocked redis data: %d and interface %d", datapointIndex)
+				fmt.Printf("Successfuly mocked redis data: %d and interface %d", datapointIndex, interfaceIndex)
 			}
 		}
 		time.Sleep(30 * time.Second)
