@@ -23,7 +23,7 @@ func ReceiveAndLogHeartBeat(hbChannel chan plugins_common.PluginHeartBeat) {
 	PrintInfo("Initiated HeartBeat Receiver")
 	for index := 0; index < 100; index++ {
 		<-hbChannel
-		fmt.Printf("Received heartbeat [%d]", index)
+		PrintInfo("Received heartbeat [%d]", index)
 	}
 }
 
