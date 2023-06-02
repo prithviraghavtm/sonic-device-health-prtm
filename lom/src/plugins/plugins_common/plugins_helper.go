@@ -294,7 +294,6 @@ loop:
             periodicDetectionPluginUtil.detectionRunInfo.mutex.Lock()
             startTimeInUtc := time.Now().UTC()
             periodicDetectionPluginUtil.detectionRunInfo.currentRunStartTimeInUtc = &startTimeInUtc
-            periodicDetectionPluginUtil.detectionRunInfo.durationOfLatestRunInSeconds = 0
             periodicDetectionPluginUtil.detectionRunInfo.mutex.Unlock()
 
             /* Perform detection logic periodically */

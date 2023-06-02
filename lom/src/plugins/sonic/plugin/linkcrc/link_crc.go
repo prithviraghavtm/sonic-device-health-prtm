@@ -32,7 +32,7 @@ const (
     min_crc_error_config_key                 = "MinCrcError"
     min_outliers_for_detection_config_key    = "MinOutliersForDetection"
     look_back_period_in_secs_config_key      = "LookBackPeriodInSecs"
-    plugin_version                           = "1.0.0.0"
+    link_crc_plugin_version                           = "1.0.0.0"
     link_crc_prefix                          = "link_crc: "
 )
 
@@ -49,6 +49,7 @@ type LinkCRCDetectionPlugin struct {
     currentMonitoredInterfaces map[string]LinkCrcDetectorInterface
     reportingFreqLimiter       plugins_common.PluginReportingFrequencyLimiterInterface
     plugins_common.PeriodicDetectionPluginUtil
+    plugin_version             string
 }
 
 /* Inheritied from Plugin */
@@ -68,6 +69,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
     linkCrcDetectionPlugin.counterRepository = &dbclient.CounterRepository{RedisProvider: &dbclient.RedisProvider{}}
     linkCrcDetectionPlugin.currentMonitoredInterfaces = map[string]LinkCrcDetectorInterface{}
     linkCrcDetectionPlugin.reportingFreqLimiter = plugins_common.GetDefaultDetectionFrequencyLimiter()
+    linkCrcDetectionPlugin.plugin_version = link_crc_plugin_version
     err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
     if err != nil {
         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
@@ -120,11 +122,10 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
                 if linkCrcDetectionPlugin.reportingFreqLimiter.ShouldReport(interfaceName) {
                     isIfActive, err := linkCrcDetectionPlugin.counterRepository.IsInterfaceActive(interfaceName)
                     if err != nil {
-                        /* Log Error but still continue to report, assuming the link is up */
+                        /* Log Error */
                         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Error getting link status from redis for interface %s. Err: %v", interfaceName, err))
-                    }
-
-                    if isIfActive {
+                        *isExecutionHealthy = false
+                    } else if isIfActive {
                         ifAnyInterfaceHasCrcError = true
                         listOfInterfacesWithCrcError.WriteString(interfaceName)
                         listOfInterfacesWithCrcError.WriteString(",")
@@ -154,7 +155,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeShutdown() error {
 }
 
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) GetPluginId() *plugins_common.PluginId {
-    return &plugins_common.PluginId{Name: linkCrcDetectionPlugin.PluginName, Version: plugin_version}
+    return &plugins_common.PluginId{Name: linkCrcDetectionPlugin.PluginName, Version: linkCrcDetectionPlugin.plugin_version}
 }
 
 type LinkCrcDetectorInterface interface {
