@@ -268,9 +268,10 @@ func Test_isInterfaceActive_ReturnsTrueForActiveInterface(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.IsInterfaceActive(ethernet1)
+    adminStatus, operStatus, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.Equal(t, nil, err, "err is exptected to be nil")
-    assert.True(t, result, "result is exptected to be true")
+    assert.True(t, adminStatus, "adminStatus is expected to be true")
+    assert.True(t, operStatus, "operStatus is expected to be true")
 }
 
 /* Validates isInterfaceActive returns false when either admin and oper status is not up */
@@ -282,9 +283,10 @@ func Test_isInterfaceActive_ReturnsFalseForInActiveInterface(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.IsInterfaceActive(ethernet1)
+    adminStatus, operStatus, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.Equal(t, nil, err, "err is exptected to be nil")
-    assert.False(t, result, "result is exptected to be False")
+    assert.False(t, adminStatus, "adminStatus is exptected to be False")
+    assert.True(t, operStatus, "operStatus is expected to be true")
 }
 
 /* Validates isInterfaceActive returns false when redis call fails */
@@ -295,9 +297,10 @@ func Test_isInterfaceActive_ReturnsFalseWhenRedisCallFails(t *testing.T) {
     // Act
     counterDBClient := CounterRepository{RedisProvider: mockRedisProvider}
     // Assert
-    result, err := counterDBClient.IsInterfaceActive(ethernet1)
+    adminStatus, operStatus, err := counterDBClient.IsInterfaceActive(ethernet1)
     assert.NotEqual(t, nil, err, "err is exptected to be nil")
-    assert.False(t, result, "result is exptected to be False")
+    assert.False(t, adminStatus, "adminStatus is exptected to be False")
+    assert.False(t, operStatus, "operStatus is exptected to be False")
 }
 
 /* Test GetInterfaceCounters returns error when context is cancelled. */
