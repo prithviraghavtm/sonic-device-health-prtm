@@ -143,7 +143,6 @@ const (
 )
 
 const (
-    req_timeout_log_periodicity_secs_key = "PLUGIN_REQ_TIMEOUT_LOG_PERIODICITY_SECS"
     min_err_cnt_to_skip_hb_key           = "PLUGIN_MIN_ERR_CNT_TO_SKIP_HEARTBEAT"
     plugin_prefix                        = "plugin_"
 )
@@ -224,30 +223,13 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
 
     lomcommon.GetGoroutineTracker().Start(plugin_prefix+periodicDetectionPluginUtil.PluginName, periodicDetectionPluginUtil.handleRequest, request)
     heartBeatTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.heartBeatIntervalInSecs) * time.Second)
-    timeoutLogTicker := time.NewTicker(time.Duration(lomcommon.GetConfigMgr().GetGlobalCfgInt(req_timeout_log_periodicity_secs_key)) * time.Second)
     defer heartBeatTicker.Stop()
-    defer timeoutLogTicker.Stop()
 
     for {
         select {
 
         case <-heartBeatTicker.C:
             periodicDetectionPluginUtil.publishHeartBeat(hbchan)
-
-        case <-timeoutLogTicker.C:
-            periodicDetectionPluginUtil.detectionRunInfo.mutex.Lock()
-            var currentRunStartTimeInUtc time.Time
-            if periodicDetectionPluginUtil.detectionRunInfo.currentRunStartTimeInUtc != nil {
-                currentRunStartTimeInUtc = *periodicDetectionPluginUtil.detectionRunInfo.currentRunStartTimeInUtc
-            }
-            periodicDetectionPluginUtil.detectionRunInfo.mutex.Unlock()
-
-            if !currentRunStartTimeInUtc.IsZero() { /* Indicates a request is running currently */
-                durationTillNow := int64(time.Since(currentRunStartTimeInUtc).Seconds())
-                if durationTillNow > int64(periodicDetectionPluginUtil.requestFrequencyInSecs) {
-                    lomcommon.LogError("Detection logic for plugin %s has timedout", periodicDetectionPluginUtil.PluginName)
-                }
-            }
 
         case resp := <-periodicDetectionPluginUtil.responseChannel:
             return resp
