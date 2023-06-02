@@ -13,7 +13,7 @@ import (
 )
 
 const (
-    /* Default values to be used for the detection, in case configuration could not be read */
+    /* Default values to be used for the detection, in case configuration does not set it */
     detection_freq_in_secs_default        = 30
     if_in_errors_diff_min_value_default   = 0
     in_unicast_packets_min_value_default  = 100
@@ -85,7 +85,6 @@ Executes the crc detection logic. isExecutionHealthy is marked false when there 
 */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(request *lomipc.ActionRequestData, isExecutionHealthy *bool, ctx context.Context) *lomipc.ActionResponseData {
     lomcommon.LogInfo(fmt.Sprintf(link_crc_prefix + "ExecuteCrcDetection Starting"))
-    ifAnyInterfaceHasCrcError := false
     var listOfInterfacesWithCrcError strings.Builder
     currentInterfaceCounters, err := linkCrcDetectionPlugin.counterRepository.GetCountersForAllInterfaces(ctx)
     if err != nil {
@@ -126,7 +125,6 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
                         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Error getting link status from redis for interface %s. Err: %v", interfaceName, err))
                         *isExecutionHealthy = false
                     } else if isIfActive {
-                        ifAnyInterfaceHasCrcError = true
                         listOfInterfacesWithCrcError.WriteString(interfaceName)
                         listOfInterfacesWithCrcError.WriteString(",")
                     }
@@ -141,7 +139,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
            then we will start detecting the crc for that link */
     }
 
-    if ifAnyInterfaceHasCrcError {
+    if len(listOfInterfacesWithCrcError.String()) != 0 {
         lomcommon.LogInfo(link_crc_prefix + "executeCrcDetection Anomaly Detected")
         return plugins_common.GetResponse(request, strings.TrimSuffix(listOfInterfacesWithCrcError.String(), ","), "Detected Crc", plugins_common.ResultCodeSuccess, plugins_common.ResultStringSuccess)
     }

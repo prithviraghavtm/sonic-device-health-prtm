@@ -280,7 +280,7 @@ func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) publishHeartBeat
     hbchan <- pluginHeartBeat
 }
 
-/* Hanldes detection logic execution and honors shutdown as well */
+/* Hanldes detection logic execution and honors shutdown as well. This is called in a goRoutine in the Request method */
 func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) handleRequest(request *lomipc.ActionRequestData) {
 
     detectionTicker := time.NewTicker(time.Duration(periodicDetectionPluginUtil.requestFrequencyInSecs) * time.Second)
