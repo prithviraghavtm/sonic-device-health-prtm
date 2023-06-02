@@ -224,7 +224,7 @@ func Test_LinkCrcDetectionPlugin_GetPluginIdReturnsPluginDetails(t *testing.T) {
     assert.Equal("1.0.0.0", pluginId.Version, "PluginId.version  is expected to be 1.0.0.0")
 }
 
-/* Validates executeShutdown returns successfully and clears monitoredInterfaces*/
+/* Validates executeShutdown returns successfully */
 func Test_LinkCrcDetectionPlugin_ExecuteShutdownReturnsSuccessfuly(t *testing.T) {
     // Mock
     linkCRCDetectionPlugin := LinkCRCDetectionPlugin{}
@@ -236,7 +236,6 @@ func Test_LinkCrcDetectionPlugin_ExecuteShutdownReturnsSuccessfuly(t *testing.T)
     assert := assert.New(t)
     assert.Nil(initErr, "initErr is expected to be nil")
     assert.Nil(shutDownErr, "shutDownErr is expected to be nil")
-    assert.Nil(linkCRCDetectionPlugin.currentMonitoredInterfaces, "monitoredInterfaces is expected to be nil")
 }
 
 /* Validates DetectCrc returns error when ActionConfig is invalid */

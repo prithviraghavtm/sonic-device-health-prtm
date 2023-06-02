@@ -150,7 +150,6 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
 
 /* Contains Clean up that needs to be done when Shutdown() is invoked. This will be invoked after ensuring request is aborted. */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeShutdown() error {
-    linkCrcDetectionPlugin.currentMonitoredInterfaces = nil
     return nil
 }
 
@@ -227,7 +226,9 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
                             if outliersCount == minOutliersForDetection {
                                 return true
                             }
-                        }
+                        } else {
+		            break
+			}
                     }
                 }
             }
