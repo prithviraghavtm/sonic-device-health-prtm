@@ -42,8 +42,8 @@ func Test_DetectionReportingFreqLimiter_DoesNotReportForInitialFrequency(t *test
 
     assert := assert.New(t)
     assert.False(shouldReport, "ShouldReport is expected to be false")
-    assert.False(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to have updated.")
-    assert.Equal(9, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 9")
+    assert.True(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to be same.")
+    assert.Equal(8, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 8")
 }
 
 /* Validate that reportingLimiter reports in initial freq */
@@ -70,8 +70,8 @@ func Test_DetectionReportingFreqLimiter_DoesNotReportForSubsequentFrequency(t *t
 
     assert := assert.New(t)
     assert.False(shouldReport, "ShouldReport is expected to be false")
-    assert.False(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to have updated.")
-    assert.Equal(16, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 16")
+    assert.True(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to be same.")
+    assert.Equal(15, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 15")
 }
 
 /* Validates that reportingLimiter does report in subsequent Frequency */

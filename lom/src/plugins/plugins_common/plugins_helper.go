@@ -54,17 +54,20 @@ func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ShouldRe
         pluginReportingFrequencyLimiter.cache[anomalyKey] = &reportingDetails
         return true
     } else {
-        defer func() {
-            reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
-            reportingDetails.lastReported = time.Now()
-        }()
-
         if reportingDetails.countOfTimesReported <= pluginReportingFrequencyLimiter.initialReportingMaxCount {
             if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.initialReportingFreqInMins) {
+                defer func() {
+                    reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
+                    reportingDetails.lastReported = time.Now()
+                }()
                 return true
             }
         } else if reportingDetails.countOfTimesReported > pluginReportingFrequencyLimiter.initialReportingMaxCount {
             if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
+                defer func() {
+                    reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
+                    reportingDetails.lastReported = time.Now()
+                }()
                 return true
             }
         }
