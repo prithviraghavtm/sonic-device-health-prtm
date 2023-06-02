@@ -10,6 +10,7 @@ import (
     "lom/src/plugins/sonic/client/dbclient"
     "strings"
     "time"
+    "encoding/json"
 )
 
 const (
@@ -44,6 +45,17 @@ var minCrcError float64
 var minOutliersForDetection int
 var lookBackPeriodInSecs int
 
+type LinkCrcDetectionActionKnob struct {
+	DetectionFreqInSecs       int     `json:"DetectionFreqInSecs"`
+	IfInErrorsDiffMinValue    int     `json:"IfInErrorsDiffMinValue"`
+	InUnicastPacketsMinValue  int     `json:"InUnicastPacketsMinValue"`
+	OutUnicastPacketsMinValue int     `json:"OutUnicastPacketsMinValue"`
+	OutlierRollingWindowSize  int     `json:"OutlierRollingWindowSize"`
+	MinCrcError               float64 `json:"MinCrcError"`
+	MinOutliersForDetection   int     `json:"MinOutliersForDetection"`
+	LookBackPeriodInSecs      int     `json:"LookBackPeriodInSecs"`
+}
+
 type LinkCRCDetectionPlugin struct {
     counterRepository          dbclient.CounterRepositoryInterface
     currentMonitoredInterfaces map[string]LinkCrcDetectorInterface
@@ -55,15 +67,28 @@ type LinkCRCDetectionPlugin struct {
 /* Inheritied from Plugin */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcommon.ActionCfg_t) error {
     // Get config settings or assign default values.
-    actionKnobsJsonString := actionConfig.ActionKnobs
-    detectionFreqInSecs := lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, detection_freq_in_secs_config_key, detection_freq_in_secs_default)
-    ifInErrorsDiffMinValue = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, if_in_errors_diff_min_value_config_key, if_in_errors_diff_min_value_default)
-    inUnicastPacketsMinValue = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, in_unicast_packets_min_value_config_key, in_unicast_packets_min_value_default)
-    outUnicastPacketsMinValue = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, out_unicast_packets_min_value_config_key, out_unicast_packets_min_value_default)
-    outlierRollingWindowSize = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, outlier_rolling_window_size_config_key, outlier_rolling_window_size_default)
-    minCrcError = lomcommon.GetFloatConfigurationFromJson(actionKnobsJsonString, min_crc_error_config_key, min_crc_error_default)
-    minOutliersForDetection = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, min_outliers_for_detection_config_key, min_outliers_for_detection_default)
-    lookBackPeriodInSecs = lomcommon.GetIntConfigurationFromJson(actionKnobsJsonString, look_back_period_in_secs_config_key, look_back_period_in_secs_default)
+    var linkCrcDetectionActionKnob LinkCrcDetectionActionKnob
+    jsonErr := json.Unmarshal([]byte(actionConfig.ActionKnobs), &linkCrcDetectionActionKnob)
+    var detectionFreqInSecs int
+    if jsonErr == nil {
+	detectionFreqInSecs = linkCrcDetectionActionKnob.DetectionFreqInSecs
+	ifInErrorsDiffMinValue = linkCrcDetectionActionKnob.IfInErrorsDiffMinValue
+	inUnicastPacketsMinValue = linkCrcDetectionActionKnob.InUnicastPacketsMinValue
+	outUnicastPacketsMinValue = linkCrcDetectionActionKnob.OutUnicastPacketsMinValue
+	outlierRollingWindowSize = linkCrcDetectionActionKnob.OutlierRollingWindowSize
+	minCrcError = linkCrcDetectionActionKnob.MinCrcError
+	minOutliersForDetection = linkCrcDetectionActionKnob.MinOutliersForDetection
+	lookBackPeriodInSecs = linkCrcDetectionActionKnob.LookBackPeriodInSecs
+    } else {
+	detectionFreqInSecs = detection_freq_in_secs_default
+	ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
+	inUnicastPacketsMinValue = in_unicast_packets_min_value_default
+	outUnicastPacketsMinValue = out_unicast_packets_min_value_default
+	outlierRollingWindowSize = outlier_rolling_window_size_default
+	minCrcError = min_crc_error_default
+	minOutliersForDetection = min_outliers_for_detection_default
+	lookBackPeriodInSecs = look_back_period_in_secs_default
+    }
 
     // Initialize values.
     linkCrcDetectionPlugin.counterRepository = &dbclient.CounterRepository{RedisProvider: &dbclient.RedisProvider{}}
