@@ -62,7 +62,7 @@ func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ShouldRe
                 }()
                 return true
             }
-        } else if reportingDetails.countOfTimesReported > pluginReportingFrequencyLimiter.initialReportingMaxCount {
+        } else {
             if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
                 defer func() {
                     reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
