@@ -10,6 +10,7 @@ import (
     "lom/src/plugins/sonic/client/dbclient"
     "testing"
     "time"
+    "lom/src/plugins/plugins_common"
 )
 
 func init() {
@@ -315,6 +316,11 @@ func (mockLimitDetectionReportingFrequency *MockLimitDetectionReportingFrequency
 
 func (mockLimitDetectionReportingFrequency *MockLimitDetectionReportingFrequency) ResetCache(anomalyKey string) {
     mockLimitDetectionReportingFrequency.Called(anomalyKey)
+}
+
+func (mockLimitDetectionReportingFrequency *MockLimitDetectionReportingFrequency) IsNotWithinFrequency(reportingDetails plugins_common.ReportingDetails) bool {
+    args := mockLimitDetectionReportingFrequency.Called(reportingDetails)
+    return args.Get(0).(bool)
 }
 
 /* Validates executeCrcDetection reports only for one interface */

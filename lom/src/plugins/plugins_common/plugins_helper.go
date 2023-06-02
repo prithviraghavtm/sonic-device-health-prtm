@@ -16,6 +16,7 @@ type PluginReportingFrequencyLimiterInterface interface {
     ShouldReport(anomalyKey string) bool
     ResetCache(anomalyKey string)
     Initialize(initialReportingFreqInMins int, subsequentReportingFreqInMins int, initialReportingMaxCount int)
+    IsNotWithinFrequency(reportingDetails ReportingDetails) bool
 }
 
 /* Contains when detection was last reported and the count of reports so far */
@@ -54,30 +55,39 @@ func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ShouldRe
         pluginReportingFrequencyLimiter.cache[anomalyKey] = &reportingDetails
         return true
     } else {
-        if reportingDetails.countOfTimesReported <= pluginReportingFrequencyLimiter.initialReportingMaxCount {
-            if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.initialReportingFreqInMins) {
-                defer func() {
-                    reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
-                    reportingDetails.lastReported = time.Now()
-                }()
-                return true
-            }
-        } else {
-            if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
-                defer func() {
-                    reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
-                    reportingDetails.lastReported = time.Now()
-                }()
-                return true
-            }
-        }
-        return false
+	if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
+	    defer func() {
+	        reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
+		reportingDetails.lastReported = time.Now()
+	    }()
+	    return true
+	}
+	return false 
     }
 }
 
 /* Resets cache for anomaly Key. This needs to be used when anomaly is not detected for an anomaly key */
 func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ResetCache(anomalyKey string) {
-    delete(pluginReportingFrequencyLimiter.cache, anomalyKey)
+	reportingDetails, ok := pluginReportingFrequencyLimiter.cache[anomalyKey]
+
+	if ok {
+		if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
+			delete(pluginReportingFrequencyLimiter.cache, anomalyKey)
+		}
+	}
+}
+
+func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) IsNotWithinFrequency(reportingDetails ReportingDetails) bool {
+	if reportingDetails.countOfTimesReported <= pluginReportingFrequencyLimiter.initialReportingMaxCount {
+		if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.initialReportingFreqInMins) {
+			return true
+		}
+	} else {
+		if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
+			return true
+		}
+	}
+	return false
 }
 
 /* Factory method to get default detection reporting limiter instance */
