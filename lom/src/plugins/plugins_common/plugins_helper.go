@@ -55,39 +55,39 @@ func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ShouldRe
         pluginReportingFrequencyLimiter.cache[anomalyKey] = &reportingDetails
         return true
     } else {
-	if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
-	    defer func() {
-	        reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
-		reportingDetails.lastReported = time.Now()
-	    }()
-	    return true
-	}
-	return false 
+        if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
+            defer func() {
+                reportingDetails.countOfTimesReported = reportingDetails.countOfTimesReported + 1
+                reportingDetails.lastReported = time.Now()
+            }()
+            return true
+        }
+        return false
     }
 }
 
 /* Resets cache for anomaly Key. This needs to be used when anomaly is not detected for an anomaly key */
 func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) ResetCache(anomalyKey string) {
-	reportingDetails, ok := pluginReportingFrequencyLimiter.cache[anomalyKey]
+    reportingDetails, ok := pluginReportingFrequencyLimiter.cache[anomalyKey]
 
-	if ok {
-		if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
-			delete(pluginReportingFrequencyLimiter.cache, anomalyKey)
-		}
-	}
+    if ok {
+        if pluginReportingFrequencyLimiter.IsNotWithinFrequency(*reportingDetails) {
+            delete(pluginReportingFrequencyLimiter.cache, anomalyKey)
+        }
+    }
 }
 
 func (pluginReportingFrequencyLimiter *PluginReportingFrequencyLimiter) IsNotWithinFrequency(reportingDetails ReportingDetails) bool {
-	if reportingDetails.countOfTimesReported <= pluginReportingFrequencyLimiter.initialReportingMaxCount {
-		if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.initialReportingFreqInMins) {
-			return true
-		}
-	} else {
-		if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
-			return true
-		}
-	}
-	return false
+    if reportingDetails.countOfTimesReported <= pluginReportingFrequencyLimiter.initialReportingMaxCount {
+        if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.initialReportingFreqInMins) {
+            return true
+        }
+    } else {
+        if time.Since(reportingDetails.lastReported).Minutes() > float64(pluginReportingFrequencyLimiter.SubsequentReportingFreqInMins) {
+            return true
+        }
+    }
+    return false
 }
 
 /* Factory method to get default detection reporting limiter instance */
@@ -143,8 +143,8 @@ const (
 )
 
 const (
-    min_err_cnt_to_skip_hb_key           = "PLUGIN_MIN_ERR_CNT_TO_SKIP_HEARTBEAT"
-    plugin_prefix                        = "plugin_"
+    min_err_cnt_to_skip_hb_key = "PLUGIN_MIN_ERR_CNT_TO_SKIP_HEARTBEAT"
+    plugin_prefix              = "plugin_"
 )
 
 /*

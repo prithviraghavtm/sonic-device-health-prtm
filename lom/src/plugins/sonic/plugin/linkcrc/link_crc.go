@@ -3,6 +3,7 @@ package linkcrc
 
 import (
     "context"
+    "encoding/json"
     "fmt"
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
@@ -10,7 +11,6 @@ import (
     "lom/src/plugins/sonic/client/dbclient"
     "strings"
     "time"
-    "encoding/json"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
     min_crc_error_config_key                 = "MinCrcError"
     min_outliers_for_detection_config_key    = "MinOutliersForDetection"
     look_back_period_in_secs_config_key      = "LookBackPeriodInSecs"
-    link_crc_plugin_version                           = "1.0.0.0"
+    link_crc_plugin_version                  = "1.0.0.0"
     link_crc_prefix                          = "link_crc: "
 )
 
@@ -46,14 +46,14 @@ var minOutliersForDetection int
 var lookBackPeriodInSecs int
 
 type LinkCrcDetectionActionKnob struct {
-	DetectionFreqInSecs       int     `json:"DetectionFreqInSecs"`
-	IfInErrorsDiffMinValue    int     `json:"IfInErrorsDiffMinValue"`
-	InUnicastPacketsMinValue  int     `json:"InUnicastPacketsMinValue"`
-	OutUnicastPacketsMinValue int     `json:"OutUnicastPacketsMinValue"`
-	OutlierRollingWindowSize  int     `json:"OutlierRollingWindowSize"`
-	MinCrcError               float64 `json:"MinCrcError"`
-	MinOutliersForDetection   int     `json:"MinOutliersForDetection"`
-	LookBackPeriodInSecs      int     `json:"LookBackPeriodInSecs"`
+    DetectionFreqInSecs       int     `json:"DetectionFreqInSecs"`
+    IfInErrorsDiffMinValue    int     `json:"IfInErrorsDiffMinValue"`
+    InUnicastPacketsMinValue  int     `json:"InUnicastPacketsMinValue"`
+    OutUnicastPacketsMinValue int     `json:"OutUnicastPacketsMinValue"`
+    OutlierRollingWindowSize  int     `json:"OutlierRollingWindowSize"`
+    MinCrcError               float64 `json:"MinCrcError"`
+    MinOutliersForDetection   int     `json:"MinOutliersForDetection"`
+    LookBackPeriodInSecs      int     `json:"LookBackPeriodInSecs"`
 }
 
 type LinkCRCDetectionPlugin struct {
@@ -61,7 +61,7 @@ type LinkCRCDetectionPlugin struct {
     currentMonitoredInterfaces map[string]LinkCrcDetectorInterface
     reportingFreqLimiter       plugins_common.PluginReportingFrequencyLimiterInterface
     plugins_common.PeriodicDetectionPluginUtil
-    plugin_version             string
+    plugin_version string
 }
 
 /* Inheritied from Plugin */
@@ -71,23 +71,23 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
     jsonErr := json.Unmarshal([]byte(actionConfig.ActionKnobs), &linkCrcDetectionActionKnob)
     var detectionFreqInSecs int
     if jsonErr == nil {
-	detectionFreqInSecs = linkCrcDetectionActionKnob.DetectionFreqInSecs
-	ifInErrorsDiffMinValue = linkCrcDetectionActionKnob.IfInErrorsDiffMinValue
-	inUnicastPacketsMinValue = linkCrcDetectionActionKnob.InUnicastPacketsMinValue
-	outUnicastPacketsMinValue = linkCrcDetectionActionKnob.OutUnicastPacketsMinValue
-	outlierRollingWindowSize = linkCrcDetectionActionKnob.OutlierRollingWindowSize
-	minCrcError = linkCrcDetectionActionKnob.MinCrcError
-	minOutliersForDetection = linkCrcDetectionActionKnob.MinOutliersForDetection
-	lookBackPeriodInSecs = linkCrcDetectionActionKnob.LookBackPeriodInSecs
+        detectionFreqInSecs = linkCrcDetectionActionKnob.DetectionFreqInSecs
+        ifInErrorsDiffMinValue = linkCrcDetectionActionKnob.IfInErrorsDiffMinValue
+        inUnicastPacketsMinValue = linkCrcDetectionActionKnob.InUnicastPacketsMinValue
+        outUnicastPacketsMinValue = linkCrcDetectionActionKnob.OutUnicastPacketsMinValue
+        outlierRollingWindowSize = linkCrcDetectionActionKnob.OutlierRollingWindowSize
+        minCrcError = linkCrcDetectionActionKnob.MinCrcError
+        minOutliersForDetection = linkCrcDetectionActionKnob.MinOutliersForDetection
+        lookBackPeriodInSecs = linkCrcDetectionActionKnob.LookBackPeriodInSecs
     } else {
-	detectionFreqInSecs = detection_freq_in_secs_default
-	ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
-	inUnicastPacketsMinValue = in_unicast_packets_min_value_default
-	outUnicastPacketsMinValue = out_unicast_packets_min_value_default
-	outlierRollingWindowSize = outlier_rolling_window_size_default
-	minCrcError = min_crc_error_default
-	minOutliersForDetection = min_outliers_for_detection_default
-	lookBackPeriodInSecs = look_back_period_in_secs_default
+        detectionFreqInSecs = detection_freq_in_secs_default
+        ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
+        inUnicastPacketsMinValue = in_unicast_packets_min_value_default
+        outUnicastPacketsMinValue = out_unicast_packets_min_value_default
+        outlierRollingWindowSize = outlier_rolling_window_size_default
+        minCrcError = min_crc_error_default
+        minOutliersForDetection = min_outliers_for_detection_default
+        lookBackPeriodInSecs = look_back_period_in_secs_default
     }
 
     // Initialize values.
@@ -250,8 +250,8 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
                                 return true
                             }
                         } else {
-		            break
-			}
+                            break
+                        }
                     }
                 }
             }

@@ -7,10 +7,10 @@ import (
     "github.com/stretchr/testify/mock"
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
+    "lom/src/plugins/plugins_common"
     "lom/src/plugins/sonic/client/dbclient"
     "testing"
     "time"
-    "lom/src/plugins/plugins_common"
 )
 
 func init() {
@@ -145,14 +145,14 @@ func Test_LinkCrcDetector_AddInterfaceCountersReturnsFalseForInvalidCountersDiff
 func Test_LinkCrcDetectionPlugin_InitializesWithActionsKnobs(t *testing.T) {
     linkCRCDetectionPlugin := LinkCRCDetectionPlugin{}
     actionKnobs := `{
-	"DetectionFreqInSecs": 35,
-	"IfInErrorsDiffMinValue": 5,
-	"InUnicastPacketsMinValue": 105,
-	"OutUnicastPacketsMinValue": 105,
-	"OutlierRollingWindowSize": 6,
-	"MinCrcError": 0.000002,
-	"MinOutliersForDetection": 3,
-	"LookBackPeriodInSecs": 127
+    "DetectionFreqInSecs": 35,
+    "IfInErrorsDiffMinValue": 5,
+    "InUnicastPacketsMinValue": 105,
+    "OutUnicastPacketsMinValue": 105,
+    "OutlierRollingWindowSize": 6,
+    "MinCrcError": 0.000002,
+    "MinOutliersForDetection": 3,
+    "LookBackPeriodInSecs": 127
     }`
 
     actionConfig := lomcommon.ActionCfg_t{HeartbeatInt: 10, ActionKnobs: actionKnobs}
