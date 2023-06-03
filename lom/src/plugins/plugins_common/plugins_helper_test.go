@@ -88,6 +88,58 @@ func Test_LimitDetectionReportingFreq_ReportsInSubsequentFrequency(t *testing.T)
     assert.Equal(16, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 16")
 }
 
+/* Validate that ResetCache does not delete entry  in initial freq */
+func Test_DetectionReportingFreqLimiter_ResetsCacheDoesNotRemoveEntryInInitialFrequency(t *testing.T) {
+	detectionReportingFrequencyLimiter := GetDefaultDetectionFrequencyLimiter()
+	currentTimeMinusTwoMins := time.Now().Add(-2 * time.Minute)
+	reportingDetails := ReportingDetails{lastReported: currentTimeMinusTwoMins, countOfTimesReported: 8}
+	detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"] = &reportingDetails
+	detectionReportingFrequencyLimiter.ResetCache("Ethernet0")
+
+	assert := assert.New(t)
+	assert.NotNil(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"], "Cache entry is expected to be removed")
+	assert.True(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to be same.")
+	assert.Equal(8, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 8")
+}
+
+/* Validate that ResetCache deletes entry in initial freq */
+func Test_DetectionReportingFreqLimiter_ResetsCacheSucceedsInInitialFrequency(t *testing.T) {
+	detectionReportingFrequencyLimiter := GetDefaultDetectionFrequencyLimiter()
+	currentTimeMinusTwoMins := time.Now().Add(-7 * time.Minute)
+	reportingDetails := ReportingDetails{lastReported: currentTimeMinusTwoMins, countOfTimesReported: 8}
+	detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"] = &reportingDetails
+	detectionReportingFrequencyLimiter.ResetCache("Ethernet0")
+
+	assert := assert.New(t)
+	assert.Nil(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"], "Cache entry is expected to be removed")
+}
+
+/* Validate that ResetCache does not delete entry  in subsequent freq */
+func Test_DetectionReportingFreqLimiter_ResetCacheDoesNotRemoveEntryInSubsequentFrequency(t *testing.T) {
+	detectionReportingFrequencyLimiter := GetDefaultDetectionFrequencyLimiter()
+	currentTimeMinusTwoMins := time.Now().Add(-2 * time.Minute)
+	reportingDetails := ReportingDetails{lastReported: currentTimeMinusTwoMins, countOfTimesReported: 15}
+	detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"] = &reportingDetails
+	detectionReportingFrequencyLimiter.ResetCache("Ethernet0")
+
+	assert := assert.New(t)
+	assert.NotNil(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"], "Cache entry is expected to be removed")
+	assert.True(currentTimeMinusTwoMins.Equal(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].lastReported), "Cache is expected to be same.")
+	assert.Equal(15, detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"].countOfTimesReported, "CountOfTimesReported is expected to be 15")
+}
+
+/* Validate that ResetCache deletes entry in subsequent freq */
+func Test_DetectionReportingFreqLimiter_ResetCacheSucceedsInSubsequentFrequency(t *testing.T) {
+	detectionReportingFrequencyLimiter := GetDefaultDetectionFrequencyLimiter()
+	currentTimeMinusTwoMins := time.Now().Add(-62 * time.Minute)
+	reportingDetails := ReportingDetails{lastReported: currentTimeMinusTwoMins, countOfTimesReported: 15}
+	detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"] = &reportingDetails
+	detectionReportingFrequencyLimiter.ResetCache("Ethernet0")
+
+	assert := assert.New(t)
+	assert.Nil(detectionReportingFrequencyLimiter.(*PluginReportingFrequencyLimiter).cache["Ethernet0"], "Cache entry is expected to be removed")
+}
+
 type MockElement struct {
     key int
 }
