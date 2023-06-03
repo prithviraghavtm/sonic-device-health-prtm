@@ -144,7 +144,7 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeCrcDetection(reques
             if linkCrcDetector.AddInterfaceCountersAndDetectCrc(interfaceCounters, time.Now().UTC()) {
                 /* Consider reporting only if it was not reported recently based on the rate limiter settings */
                 if linkCrcDetectionPlugin.reportingFreqLimiter.ShouldReport(interfaceName) {
-                    adminStatus, operStatus, err := linkCrcDetectionPlugin.counterRepository.IsInterfaceActive(interfaceName)
+                    adminStatus, operStatus, err := linkCrcDetectionPlugin.counterRepository.GetInterfaceStatus(interfaceName)
                     if err != nil {
                         /* Log Error */
                         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Error getting link status from redis for interface %s. Err: %v", interfaceName, err))

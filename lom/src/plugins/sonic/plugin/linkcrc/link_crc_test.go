@@ -31,7 +31,7 @@ func (mockCounterRepository *MockCounterRepository) GetCountersForAllInterfaces(
     return args.Get(0).(dbclient.InterfaceCountersMap), args.Error(1)
 }
 
-func (mockCounterRepository *MockCounterRepository) IsInterfaceActive(interfaceName string) (bool, bool, error) {
+func (mockCounterRepository *MockCounterRepository) GetInterfaceStatus(interfaceName string) (bool, bool, error) {
     args := mockCounterRepository.Called(interfaceName)
     return args.Get(0).(bool), args.Get(1).(bool), args.Error(2)
 }
@@ -306,8 +306,8 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionDetectsSuccessfuly(t *testing.T) {
     mockCounterRepository.On("GetCountersForAllInterfaces", ctx).Return(counterMap4, nil).Once()
     mockCounterRepository.On("GetCountersForAllInterfaces", ctx).Return(counterMap5, nil).Once()
 
-    mockCounterRepository.On("IsInterfaceActive", "Ethernet1").Return(true, true, nil).Once()
-    mockCounterRepository.On("IsInterfaceActive", "Ethernet2").Return(true, true, nil).Once()
+    mockCounterRepository.On("GetInterfaceStatus", "Ethernet1").Return(true, true, nil).Once()
+    mockCounterRepository.On("GetInterfaceStatus", "Ethernet2").Return(true, true, nil).Once()
     linkCRCDetectionPlugin.counterRepository = mockCounterRepository
 
     request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
@@ -381,7 +381,7 @@ func Test_LinkCrcDetectionPlugin_CrcDetectionReportsForOnlyOneInterface(t *testi
     mockCounterRepository.On("GetCountersForAllInterfaces", ctx).Return(counterMap3, nil).Once()
     mockCounterRepository.On("GetCountersForAllInterfaces", ctx).Return(counterMap4, nil).Once()
     mockCounterRepository.On("GetCountersForAllInterfaces", ctx).Return(counterMap5, nil).Once()
-    mockCounterRepository.On("IsInterfaceActive", "Ethernet1").Return(true, true, nil).Once()
+    mockCounterRepository.On("GetInterfaceStatus", "Ethernet1").Return(true, true, nil).Once()
     linkCRCDetectionPlugin.counterRepository = mockCounterRepository
     // Act
     request := &lomipc.ActionRequestData{Action: "action", InstanceId: "InstanceId", AnomalyInstanceId: "AnmlyInstId", Timeout: 0}
