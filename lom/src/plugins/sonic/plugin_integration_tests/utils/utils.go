@@ -36,3 +36,13 @@ func LoadConfigToMap(input []byte) map[string]interface{} {
     }
     return mapping
 }
+
+func LoadConfigsToMap(input []byte) []map[string]interface{} {
+    var mappings []map[string]interface{}
+
+    err := json.Unmarshal(input, &mappings)
+    if err != nil {
+        fmt.Println("Error un-marshalling bytes to array of map")
+    }
+    return mappings
+}

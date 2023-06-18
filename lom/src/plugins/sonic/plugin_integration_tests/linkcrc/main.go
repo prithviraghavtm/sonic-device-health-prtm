@@ -2,9 +2,9 @@ package main
 
 import (
     "context"
-    "fmt"
+//    "fmt"
     "github.com/go-redis/redis"
-    "io/ioutil"
+  //  "io/ioutil"
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
     "lom/src/plugins/plugins_common"
@@ -12,7 +12,7 @@ import (
     "lom/src/plugins/sonic/plugin_integration_tests/utils"
     "os"
     "os/exec"
-    "strconv"
+  //  "strconv"
     "strings"
     "time"
 )
@@ -69,7 +69,8 @@ loop:
 }
 
 func InvokeLinkCrcDetectionPlugin(cancelFunc context.CancelFunc) {
-    go MockRedisData()
+    outliers := []int{1, 0, 0, 0, 1}
+    go MockRedisData(outliers)
     linkCrcDetectionPlugin := linkcrc.LinkCRCDetectionPlugin{}
     actionCfg := lomcommon.ActionCfg_t{Name: action_name, Type: detection_type, Timeout: 0, HeartbeatInt: 10, Disable: false, Mimic: false, ActionKnobs: ""}
     linkCrcDetectionPlugin.Init(&actionCfg)
@@ -90,19 +91,7 @@ func InvokeLinkCrcDetectionPlugin(cancelFunc context.CancelFunc) {
     cancelFunc()
 }
 
-func MockRedisData() error {
-    datapoints := make([]map[string]interface{}, 5)
-
-    for index := 0; index < 5; index++ {
-        countersForLinkCRCBytes, err := ioutil.ReadFile(fileName + strconv.Itoa(index+1) + ".txt")
-        if err != nil {
-            utils.PrintError("Error reading file %d. Err %v", index+1, err)
-            return err
-        }
-        datapoints[index] = utils.LoadConfigToMap(countersForLinkCRCBytes)
-        fmt.Println(datapoints[index])
-    }
-
+func MockRedisData(outliers []int) error {
     var countersDbClient = redis.NewClient(&redis.Options{
         Addr:     redis_address,
         Password: redis_password,
@@ -140,11 +129,46 @@ func MockRedisData() error {
         }
     }
 
-    // Mock counters with sleep.
+    // Write first data points into redis.
     utils.PrintInfo("Counters Mock Initiated")
-    for datapointIndex := 0; datapointIndex < len(datapoints); datapointIndex++ {
+    var ifInErrors float64
+    var ifInUnicastPackets float64
+    var ifOutUnicastPackets float64
+    var ifOutErrors float64
+    ifInErrors = 100
+    ifInUnicastPackets = 101
+    ifOutUnicastPackets = 1100
+    ifOutErrors = 1
+    datapoint := map[string]interface{}{"SAI_PORT_STAT_IF_IN_ERRORS": ifInErrors, "SAI_PORT_STAT_IF_IN_UCAST_PKTS": ifInUnicastPackets, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS": ifOutUnicastPackets, "SAI_PORT_STAT_IF_OUT_ERRORS": ifOutErrors}
+    for ifName, oidMapping := range mockedLinks {
+        _, err := countersDbClient.HMSet(counters_db+oidMapping, datapoint).Result()
+        if err != nil {
+            utils.PrintError("Error mocking redis data for interface %s. Err %v", ifName, err)
+            return err
+        } else {
+            utils.PrintInfo("Successfuly mocked redis data for interface %s", ifName)
+        }
+    }
+    time.Sleep(30 * time.Second)
+
+    // Mock counters with sleep.
+    for outlier := 0; outlier < len(outliers); outlier++ {
+        if (outliers[outlier] == 1) {
+                                ifInErrors = ifInErrors + 600
+                                ifInUnicastPackets = ifInUnicastPackets + 1005
+                                ifOutUnicastPackets = ifOutUnicastPackets + 1005
+                                ifOutErrors = ifOutErrors + 30
+        } else {
+                                ifInErrors = ifInErrors + 200
+                                ifInUnicastPackets = ifInUnicastPackets + 300000015
+                                ifOutUnicastPackets = ifOutUnicastPackets + 1005
+                                ifOutErrors = ifOutErrors + 30
+        }
+
+        datapoint = map[string]interface{}{"SAI_PORT_STAT_IF_IN_ERRORS": ifInErrors, "SAI_PORT_STAT_IF_IN_UCAST_PKTS": ifInUnicastPackets, "SAI_PORT_STAT_IF_OUT_UCAST_PKTS": ifOutUnicastPackets, "SAI_PORT_STAT_IF_OUT_ERRORS": ifOutErrors}
+
         for ifName, oidMapping := range mockedLinks {
-            _, err := countersDbClient.HMSet(counters_db+oidMapping, datapoints[datapointIndex]).Result()
+            _, err := countersDbClient.HMSet(counters_db+oidMapping, datapoint).Result()
             if err != nil {
                 utils.PrintError("Error mocking redis data for interface %s. Err %v", ifName, err)
                 return err
