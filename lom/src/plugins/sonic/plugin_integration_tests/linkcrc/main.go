@@ -2,9 +2,7 @@ package main
 
 import (
     "context"
-//    "fmt"
     "github.com/go-redis/redis"
-  //  "io/ioutil"
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
     "lom/src/plugins/plugins_common"
@@ -12,7 +10,6 @@ import (
     "lom/src/plugins/sonic/plugin_integration_tests/utils"
     "os"
     "os/exec"
-  //  "strconv"
     "strings"
     "time"
 )
@@ -44,18 +41,23 @@ func main() {
         utils.PrintInfo("Successfuly Disabled counterpoll")
     }
 
-    // Perform Actual integration test
-    ctx, cancelFunc := context.WithCancel(context.Background())
-    go InvokeLinkCrcDetectionPlugin(cancelFunc)
-loop:
-    for {
-        select {
-        case <-time.After(3 * time.Minute):
-            utils.PrintError("Timeout. Aborting Integration test")
-            break loop
-        case <-ctx.Done():
-            break loop
+    outliersArray := [][]int{[]int{1, 0, 0, 0, 1}, []int{1, 0, 1, 0, 0}}
+
+    for index:= 0; index < len(outliersArray); index++ {
+        ctx, cancelFunc := context.WithCancel(context.Background())
+        go InvokeLinkCrcDetectionPlugin(outliersArray[index], cancelFunc)
+        timeoutTimer := time.NewTimer(time.Duration(3) * time.Minute)
+    loop:
+        for {
+            select {
+	    case <- timeoutTimer.C:
+                utils.PrintError("Timeout. Aborting Integration test")
+                break loop
+            case <-ctx.Done():
+                break loop
+            }
         }
+	timeoutTimer.Stop()
     }
 
     // Post - clean up
@@ -68,8 +70,7 @@ loop:
     utils.PrintInfo("Its exepcted not to receive any heartbeat or plugin logs from now as the anomaly is detected")
 }
 
-func InvokeLinkCrcDetectionPlugin(cancelFunc context.CancelFunc) {
-    outliers := []int{1, 0, 0, 0, 1}
+func InvokeLinkCrcDetectionPlugin(outliers []int, cancelFunc context.CancelFunc) {
     go MockRedisData(outliers)
     linkCrcDetectionPlugin := linkcrc.LinkCRCDetectionPlugin{}
     actionCfg := lomcommon.ActionCfg_t{Name: action_name, Type: detection_type, Timeout: 0, HeartbeatInt: 10, Disable: false, Mimic: false, ActionKnobs: ""}
