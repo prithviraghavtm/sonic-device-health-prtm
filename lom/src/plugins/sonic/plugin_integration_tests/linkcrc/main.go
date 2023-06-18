@@ -41,19 +41,28 @@ func main() {
         utils.PrintInfo("Successfuly Disabled counterpoll")
     }
 
-    outliersArray := [][]int{[]int{1, 0, 0, 0, 1}, []int{1, 0, 1, 0, 0}}
+    outliersArray := [][]int{[]int{1, 0, 0, 0, 1}, []int{1, 0, 1, 0, 0}, []int{0, 0, 0, 0, 0}}
+    shouldDetectCrc := []bool{true, true, false}
 
     for index:= 0; index < len(outliersArray); index++ {
         ctx, cancelFunc := context.WithCancel(context.Background())
-        go InvokeLinkCrcDetectionPlugin(outliersArray[index], cancelFunc)
+        shouldDetect := shouldDetectCrc[index]
+	go InvokeLinkCrcDetectionPlugin(outliersArray[index], cancelFunc, shouldDetect)
         timeoutTimer := time.NewTimer(time.Duration(3) * time.Minute)
     loop:
         for {
             select {
 	    case <- timeoutTimer.C:
-                utils.PrintError("Timeout. Aborting Integration test")
+                if shouldDetect {
+		    utils.PrintError("Timeout. Aborting Integration test")
+		} else {
+		    utils.PrintInfo("Integration Test Succeeded as timeout was expected")
+		}
                 break loop
             case <-ctx.Done():
+		if !shouldDetect {
+                   utils.PrintError("Integration Test Failed")
+                }
                 break loop
             }
         }
@@ -70,7 +79,7 @@ func main() {
     utils.PrintInfo("Its exepcted not to receive any heartbeat or plugin logs from now as the anomaly is detected")
 }
 
-func InvokeLinkCrcDetectionPlugin(outliers []int, cancelFunc context.CancelFunc) {
+func InvokeLinkCrcDetectionPlugin(outliers []int, cancelFunc context.CancelFunc, shouldDetect bool) {
     go MockRedisData(outliers)
     linkCrcDetectionPlugin := linkcrc.LinkCRCDetectionPlugin{}
     actionCfg := lomcommon.ActionCfg_t{Name: action_name, Type: detection_type, Timeout: 0, HeartbeatInt: 10, Disable: false, Mimic: false, ActionKnobs: ""}
@@ -81,14 +90,16 @@ func InvokeLinkCrcDetectionPlugin(outliers []int, cancelFunc context.CancelFunc)
     time.Sleep(10 * time.Second)
     response := linkCrcDetectionPlugin.Request(pluginHBChan, &actionRequest)
     utils.PrintInfo("Integration testing Done.Anomaly detection result: %s", response.AnomalyKey)
-    for _, v := range os.Args[1:] {
-        if !strings.Contains(response.AnomalyKey, v) {
-            utils.PrintError("Integration Test Failed")
-            cancelFunc()
-            return
+    if shouldDetect {
+        for _, v := range os.Args[1:] {
+            if !strings.Contains(response.AnomalyKey, v) {
+                utils.PrintError("Integration Test Failed")
+                cancelFunc()
+                return
+            }
         }
+        utils.PrintInfo("Integration Test Succeeded")
     }
-    utils.PrintInfo("Integration Test Succeeded")
     cancelFunc()
 }
 
