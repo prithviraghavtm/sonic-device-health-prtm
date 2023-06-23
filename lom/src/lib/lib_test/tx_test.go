@@ -19,6 +19,7 @@ package lib_test
  */
 
 import (
+    "bytes"
     "encoding/json"
     "errors"
     "fmt"
@@ -813,7 +814,6 @@ type ConfigData_t struct {
     BindStr   string
     ProcStr   string
     Failed    bool
-    testMode  bool
     Reason    string
 }
 
@@ -824,7 +824,6 @@ var testConfigData = []ConfigData_t{
         "",
         "",
         true,
-        false,
         "Missing global file",
     },
     {
@@ -833,7 +832,6 @@ var testConfigData = []ConfigData_t{
         "",
         "",
         true,
-        false,
         "Missing actions file",
     },
     {
@@ -842,7 +840,6 @@ var testConfigData = []ConfigData_t{
         "",
         "",
         true,
-        false,
         "Missing bindings file",
     },
     {
@@ -851,7 +848,6 @@ var testConfigData = []ConfigData_t{
         "{}",
         "",
         true,
-        false,
         "Missing procs file",
     },
     {
@@ -860,7 +856,6 @@ var testConfigData = []ConfigData_t{
         "",
         "",
         true,
-        false,
         "Invalid global Json data",
     },
     {
@@ -869,7 +864,6 @@ var testConfigData = []ConfigData_t{
         "",
         "",
         true,
-        false,
         "Invalid actions Json data",
     },
     {
@@ -878,7 +872,6 @@ var testConfigData = []ConfigData_t{
         "eee",
         "",
         true,
-        false,
         "Invalid bindings Json data",
     },
     {
@@ -887,52 +880,46 @@ var testConfigData = []ConfigData_t{
         "{}",
         "eee",
         true,
-        false,
         "Invalid procs Json data",
     },
     {
         `{}`,
-        `{ "actions": [ { "name": "xxx" } ] }`,
+        `{ "xxx" :{ "name": "xxx" } }`,
         `{ "bindings": [ { "name": "Test", "actions": [ {"name": "YYY"} ] } ] }`,
         `{}`,
         true,
-        false,
         "Action name YYY not in actions",
     },
     {
         `{}`,
-        `{ "actions": [ { "name": "xxx" }, { "name": "yyy" } ] }`,
+        `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`,
         `{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 0 }, {"name": "yyy"}] } ] }`,
         `{}`,
         true,
-        false,
         "Duplicate sequence",
     },
     {
         `{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-        `{ "actions": [ { "name": "xxx" }, { "name": "yyy" } ] }`,
+        `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`,
         `{ "bindings": [ { "name": "Test", "actions": [ ] } ] }`,
         `{}`,
         true,
-        false,
         "No actions in sequence",
     },
     {
         `{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-        `{ "actions": [ { "name": "xxx" }, { "name": "yyy" } ] }`,
+        `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`,
         `{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 1 }, {"name": "yyy"}] } ] }`,
         `{}`,
-        false,
         false,
         "",
     },
     {
         `{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-        `{ "actions": [ { "name": "xxx" }, { "name": "yyy" } ] }`,
+        `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`,
         `{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 1 }, {"name": "yyy"}] } ] }`,
         `{ "procs": { "proc_0": { "Detect-0": { "name": "Detect-0", "version": "00.01.1", "path": " /path/" }}, "proc_1": { "Mitigate-0": { "name": "Mitigate-0", "version": "02_1", "path": " /path/" }}}}`,
         false,
-        true,
         "",
     },
 }
@@ -950,7 +937,7 @@ type testAPIData_t struct {
 
 var testApiData = testAPIData_t{
     `{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 22, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-    `{ "actions": [ { "name": "foo", "timeout":77 }, { "name": "bar" } ] }`,
+    `{"foo": {"name": "foo","timeout": 77},"bar": {"name": "bar"}}`,
     `{ "bindings": [ { "sequencename": "TestFoo", "timeout": 60, "actions": [ {"name": "foo", "sequence": 1 }, {"name": "bar"}] } ] }`,
     `{ "procs": {"proc_0": { "Detect-0": { "name": "Detect-0", "version": "00.01.1", "path": " /path/" }}, "proc_1": { "Mitigate-0": { "name": "Mitigate-0", "version": "02_1", "path": " /path/" }}}}`,
     map[string]bool{
@@ -984,7 +971,7 @@ var testApiData = testAPIData_t{
             0,
             false,
             false,
-            "",
+            json.RawMessage(``),
         },
         "bar": {
             "bar",
@@ -993,7 +980,7 @@ var testApiData = testAPIData_t{
             0,
             false,
             false,
-            "",
+            json.RawMessage(``),
         },
     },
     map[string]ProcPluginConfigList_t{
@@ -1036,7 +1023,7 @@ func createFile(name string, s string) (string, error) {
     }
 }
 
-func getConfigMgrTest(t *testing.T, gl, ac, bi, pr string, testMode bool) (*ConfigMgr_t, error) {
+func getConfigMgrTest(t *testing.T, gl, ac, bi, pr string) (*ConfigMgr_t, error) {
     if flG, err := createFile(GLOBALS_CONF_FILE, gl); err != nil {
         t.Errorf("TestConfig: Failed to create Global file")
     } else if _, err := createFile(ACTIONS_CONF_FILE, ac); err != nil {
@@ -1046,11 +1033,6 @@ func getConfigMgrTest(t *testing.T, gl, ac, bi, pr string, testMode bool) (*Conf
     } else if _, err := createFile(PROCS_CONF_FILE, pr); err != nil {
         t.Errorf("TestConfig: Failed to create Procs file")
     } else {
-        if testMode {
-            if _, err := createFile(LOM_TESTMODE_NAME, "zz"); err != nil {
-                t.Errorf("TestConfig: Failed to create TestMode (%s) file", LOM_TESTMODE_NAME)
-            }
-        }
         os.Setenv("LOM_CONF_LOCATION", "")
         if err := InitConfigPath(filepath.Dir(flG)); err != nil {
             return nil, err
@@ -1058,12 +1040,13 @@ func getConfigMgrTest(t *testing.T, gl, ac, bi, pr string, testMode bool) (*Conf
             return GetConfigMgr(), nil
         }
     }
+
     return nil, LogError("Failed to init Cfg Manager")
 }
 
 func cleanConfigFiles() {
     for _, v := range []string{GLOBALS_CONF_FILE, ACTIONS_CONF_FILE,
-        BINDINGS_CONF_FILE, PROCS_CONF_FILE, LOM_TESTMODE_NAME} {
+        BINDINGS_CONF_FILE, PROCS_CONF_FILE} {
         fl := filepath.Join("/tmp/", v)
         if _, err := os.Stat(fl); err == nil {
             os.Remove(fl)
@@ -1072,6 +1055,9 @@ func cleanConfigFiles() {
 }
 
 func TestConfig(t *testing.T) {
+    if GetLoMRunMode() != LoMRunMode_Test {
+        t.Fatalf("Expect runmod as Test (%d) != (%d)", LoMRunMode_Test, GetLoMRunMode())
+    }
     {
         os.Setenv("LOM_CONF_LOCATION", "")
         if e := InitConfigPath(""); e == nil {
@@ -1079,65 +1065,17 @@ func TestConfig(t *testing.T) {
         }
     }
     for ti, d := range testConfigData {
-        ResetLoMMode()
-        ctTestMode := GetLoMRunMode()
-        if ctTestMode != LoMRunMode_NotSet {
-            t.Errorf("%d: Expect run mode NotSet(%d) != ct(%d)", ti, LoMRunMode_NotSet, ctTestMode)
-        }
-        _, err := getConfigMgrTest(t, d.GlobalStr, d.ActionStr, d.BindStr, d.ProcStr, d.testMode)
+        _, err := getConfigMgrTest(t, d.GlobalStr, d.ActionStr, d.BindStr, d.ProcStr)
         if d.Failed == (err == nil) {
             t.Errorf("%d: Expect to fail(%v) but result:(%v): (%s)",
                 ti, d.Failed, err, d.Reason)
         }
         LogDebug("err=(%v)", err)
-        if !d.Failed {
-            expTestMode := LoMRunMode_Prod
-            if d.testMode {
-                expTestMode = LoMRunMode_Test
-            }
-            ctTestMode = GetLoMRunMode()
-            if expTestMode != ctTestMode {
-                t.Errorf("%d: mode mismatch exp(%d) != ct(%d) d.testMode(%v)", ti, expTestMode, ctTestMode, d.testMode)
-            }
-        }
         cleanConfigFiles()
     }
-    {
-        {
-            lst := []struct {
-                val  string
-                mode LoMRunMode_t
-            }{{"yes", LoMRunMode_Test}, {"xyz", LoMRunMode_Prod}}
-
-            for i, v := range lst {
-                ResetLoMMode()
-                os.Setenv(LOM_TESTMODE_NAME, v.val)
-                ctMode := GetLoMRunMode()
-                if ctMode != v.mode {
-                    t.Errorf("%d: mode mismatch exp(%d) != ct(%d)", i, v.mode, ctMode)
-                }
-            }
-            os.Unsetenv(LOM_TESTMODE_NAME)
-        }
-        {
-            ResetLoMMode()
-            for i, v := range []struct {
-                mode LoMRunMode_t
-                fail bool
-            }{{LoMRunMode_NotSet, true},
-                {LoMRunMode_Test, false},
-                {LoMRunMode_Prod, true}} {
-                if err := SetLoMRunMode(v.mode); (err != nil) != v.fail {
-                    t.Errorf("%d: Expect to fail(%v) err(%v)", i, v.fail, err)
-                }
-                LogDebug("---------- i=%d v=(%v) -------------", i, v)
-            }
-            ResetLoMMode()
-        }
-    }
 
     {
-        mgr, err := getConfigMgrTest(t, testApiData.GlobalStr, testApiData.ActionStr, testApiData.BindStr, testApiData.ProcStr, false)
+        mgr, err := getConfigMgrTest(t, testApiData.GlobalStr, testApiData.ActionStr, testApiData.BindStr, testApiData.ProcStr)
         if err != nil {
             t.Errorf("Unexpected error: (%v) (%v)", err, mgr == nil)
         }
@@ -1217,8 +1155,11 @@ func TestConfig(t *testing.T) {
         for k, v := range testApiData.ActionsCfg {
             if a, e := mgr.GetActionConfig(k); e != nil {
                 t.Errorf("%s: Failed to get action cfg", k)
-            } else if *a != v {
-                t.Errorf("%s: config mismatch (%v) != (%v)", k, a, v)
+            } else {
+                // Compare the ActionKnobs fields as []byte slices
+                if !bytes.Equal(a.ActionKnobs, v.ActionKnobs) {
+                    t.Errorf("%s: config mismatch (%v) != (%v)", k, a, v)
+                }
             }
         }
 
@@ -1258,7 +1199,7 @@ func TestPeriodic(t *testing.T) {
     if len(s) == 36 {
         t.Errorf("Expect custom string not 36. (%d) (%s)", len(s), s)
     }
-    _, err := getConfigMgrTest(t, `{ "MIN_PERIODIC_LOG_PERIOD_SECS": 1 }`, "{}", "{}", "{}", false)
+    _, err := getConfigMgrTest(t, `{ "MIN_PERIODIC_LOG_PERIOD_SECS": 1 }`, "{}", "{}", "{}")
     if err != nil {
         t.Errorf("Unexpected error: (%v)", err)
     }

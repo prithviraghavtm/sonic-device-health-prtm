@@ -35,13 +35,13 @@ var (
  * Constants for plugin manager with default values
  */
 const (
-    GOLIB_TIMEOUT_DEFAULT                    = 0 * time.Millisecond /* Default GoLIB API timeouts */
-    PLUGIN_PERIODIC_FALLBACK_TIMEOUT_DEFAULT = 3600 * time.Second   /* Default Periodic logging long timeout */
-    PLUGIN_PERIODIC_TIMEOUT_DEFAULT          = 300 * time.Second    /* Default periodic logging short timeout */
-    PLUGIN_LOADING_TIMEOUT_DEFAULT           = 30 * time.Second
-    PLUGIN_SHUTDOWN_TIMEOUT_DEFAULT          = 30 * time.Second
-    GOROUTINE_CLEANUP_TIMEOUT_DEFAULT        = 30 * time.Second
-    APP_NAME_DEAULT                          = "PluginMgr"
+    GOLIB_TIMEOUT_DEFAULT                    = 0 * time.Millisecond // Time until initial connection to golib
+    PLUGIN_PERIODIC_FALLBACK_TIMEOUT_DEFAULT = 3600 * time.Second   // Default fallback timeout for periodic logging
+    PLUGIN_PERIODIC_TIMEOUT_DEFAULT          = 300 * time.Second    // Default timeout for periodic logging
+    PLUGIN_LOADING_TIMEOUT_DEFAULT           = 30 * time.Second     // Time to wait for plugin to load
+    PLUGIN_SHUTDOWN_TIMEOUT_DEFAULT          = 30 * time.Second     // Time to wait for plugin to shutdown
+    GOROUTINE_CLEANUP_TIMEOUT_DEFAULT        = 30 * time.Second     // Time to wait for goroutines to cleanup at systemshutdown
+    APP_NAME_DEAULT                          = "PluginMgr"          // Default name for the application
 )
 
 var LogInfo = lomcommon.LogInfo
@@ -203,12 +203,13 @@ func (plmgr *PluginManager) run() error {
             for {
                 serverReq, err := plmgr.clientTx.RecvServerRequest()
                 if plmgr.getShutdownStatus() {
-                    LogInfo("In run() RecvServerRequest: Shutdown is active, ignoring request: %v", serverReq)
+                    LogInfo("In run() RecvServerRequest: Shutdown is active, ignoring request: %s", lomipc.PrintServerRequest(serverReq, false))
                     if lomcommon.GetLoMRunMode() == lomcommon.LoMRunMode_Test {
                         return
                     }
                 } else if err != nil {
-                    LogError("Error in run() RecvServerRequest: %v", err)
+                    LogError("Error in run() RecvServerRequest: %v, Exiting process ...", err)
+                    osExit(0)
                 } else if serverReq == nil {
                     LogError("run() RecvServerRequest returned : %v", serverReq)
                 } else {
@@ -225,10 +226,10 @@ func (plmgr *PluginManager) run() error {
         case respObj := <-plmgr.responseChan: // response from plugin are received here and sent to engine via clientTx interface
             // If plugin manager is shutting down, do not send response to engine
             if plmgr.getShutdownStatus() {
-                LogInfo("In run(): Plugin manager is shutdown. Not sending response to engine %v", respObj)
+                LogInfo("In run(): Plugin manager is shutdown. Not sending response to engine %s", lomipc.PrintServerResponse(respObj))
                 //return nil
             } else {
-                LogInfo("In run() : Received response object : %v", respObj)
+                LogInfo("In run() : Sending response to engine : %s", lomipc.PrintServerResponse(respObj))
                 switch resp := respObj.(type) {
                 case *lomipc.MsgSendServerResponse:
                     if err := plmgr.clientTx.SendServerResponse(resp); err != nil {
@@ -242,24 +243,24 @@ func (plmgr *PluginManager) run() error {
             }
         case serverReq := <-serverReqChan: // requests from engine are received here and handled
             if plmgr.getShutdownStatus() {
-                LogInfo("In run() RecvServerRequest: Shutdown is active, so ignoring request: %v", serverReq)
+                LogInfo("In run() RecvServerRequest: Shutdown is active, so ignoring request: %s", lomipc.PrintServerRequest(serverReq, false))
                 if lomcommon.GetLoMRunMode() == lomcommon.LoMRunMode_Test {
                     return nil
                 }
             } else {
                 switch serverReq.ReqType {
                 case lomipc.TypeServerRequestAction:
-                    LogInfo("In run() RecvServerRequest : Received action request : %v", serverReq)
-                    actionReq, ok := serverReq.ReqData.(*lomipc.ActionRequestData)
+                    LogInfo("In run() RecvServerRequest : Received action request : %s", lomipc.PrintServerRequest(serverReq, false))
+                    actionReq, ok := serverReq.ReqData.(lomipc.ActionRequestData)
                     if !ok {
                         LogError("In run() RecvServerRequest : Error in parsing ActionRequestData for type : %v, data : %v",
                             serverReq.ReqType, serverReq.ReqData)
                     } else {
                         lomcommon.GetGoroutineTracker().Start("plg_mgr_Run_Action_"+actionReq.Action+"_"+lomcommon.GetUUID(),
-                            plmgr.handleRequest, actionReq)
+                            plmgr.handleRequest, &actionReq)
                     }
                 case lomipc.TypeServerRequestShutdown:
-                    LogInfo("In run() RecvServerRequest : Received shutdown request : %v", serverReq)
+                    LogInfo("In run() RecvServerRequest : Received shutdown request : %s", lomipc.PrintServerRequest(serverReq, false))
                     shutdownReq, ok := serverReq.ReqData.(*lomipc.ShutdownRequestData)
                     if !ok {
                         LogError("In run RecvServerRequest : Error in parsing ShutdownRequestData for type : %v, data : %v",
@@ -371,7 +372,7 @@ func (plmgr *PluginManager) handleRequest(actionReq *lomipc.ActionRequestData) e
             return
         }
 
-        LogDebug("In handleRequest(): Received response from plugin %v", respData.Action)
+        LogDebug("In handleRequest(): Received response from plugin %v, data : %s", respData.Action, lomipc.PrintActionResponseData(respData))
 
         if respData.Action != actionReq.Action {
             LogPanic("In handleRequest(): Invalid action name received. Got  %v, expected %v",
@@ -465,7 +466,7 @@ loop:
     for {
         select {
         case hbvalue := <-hbChan:
-            LogDebug("In handleRequest(): Received heartbeat from plugin %v", hbvalue.PluginName)
+            LogDebug("In handleRequest(): Received heartbeat from plugin %v, time : %v", hbvalue.PluginName, hbvalue.EpochTime)
             if hbvalue.PluginName != actionReq.Action {
                 LogPanic("In handleRequest(): Error, Received heartbeat from plugin %v, expected %v",
                     hbvalue.PluginName, actionReq.Action)
@@ -681,7 +682,7 @@ func (plmgr *PluginManager) addPlugin(pluginName string, pluginVersion string) e
     // 2.Get plugin specific details from actions config file and add any additional info(future) to pass to plugin's init() call
     actionCfg, err := lomcommon.GetConfigMgr().GetActionConfig(pluginName)
     if err != nil {
-        retMsg = fmt.Sprintf("addPlugin : plugin %s not found in actions config file", pluginName)
+        retMsg = fmt.Sprintf("addPlugin : plugin %s not found in actions config file, error : %s", pluginName, err)
         return LogError(retMsg)
     }
 
@@ -848,7 +849,7 @@ func SetupSignals() {
  * parse program command line arguments
  */
 
-func ParseArguments() {
+func ParseArguments() string {
     // Create a new flag set
     fs := flag.NewFlagSet("customFlags", flag.ExitOnError)
 
@@ -865,14 +866,17 @@ func ParseArguments() {
 
     if ProcIDFlag == "" {
         LogPanic("Exiting : Proc ID is not provided")
-        return
+        return ""
     }
 
     // assign to variables which can be accessed from process
     ProcID = ProcIDFlag
     lomcommon.SetLogLevel(syslog.Priority(syslogLevelFlag))
 
-    fmt.Printf("Program Arguments : proc ID : %s, Syslog Level : %d\n", ProcIDFlag, syslogLevelFlag)
+    msg := fmt.Sprintf("Program Arguments : proc ID : %s, Syslog Level : %d\n", ProcIDFlag, syslogLevelFlag)
+    fmt.Println(msg)
+
+    return msg
 }
 
 /*
@@ -907,7 +911,8 @@ func StartPluginManager(waittime time.Duration) error {
     for pluginname, plconfig := range procInfo {
         LogInfo("StartPluginManager : Initializing plugin %s version %s", pluginname, plconfig.Version)
         errv := vpluginManager.loadPlugin(pluginname, plconfig.Version)
-        if errv != nil {
+        _, ok := vpluginManager.plugins[pluginname] // check for plugin registeration(for disabled case loadPlugin() reutrns nil)
+        if errv != nil || !ok {
             LogError("StartPluginManager : Error Initializing plugin %s version %s : %v", pluginname, plconfig.Version, errv)
         } else {
             vpluginManager.pluginMetadata[pluginname].SetPluginStage(plugins_common.PluginStageLoadingSuccess)
@@ -932,10 +937,12 @@ func StartPluginManager(waittime time.Duration) error {
 func SetupPluginManager() error {
 
     //parse program arguments & assign values to program variables. Hree proc_X value is read
-    ParseArguments()
+    msg := ParseArguments()
 
     // setup application prefix for logging
     lomcommon.SetPrefix(APP_NAME_DEAULT + "_" + ProcID)
+
+    LogInfo(msg)
 
     //syslog level change from UNIX signals
     SetupSignals()

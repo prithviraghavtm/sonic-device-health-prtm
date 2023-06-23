@@ -6,6 +6,11 @@
 LOM_LIB_PATH=/lom-root/lom/build/lib  python3 setup.py test --addopts "-s"   -- to capture stdout
 
 
+Runtime:
+Sets log level to Debug.
+This prints all log messages to stdout during test run.
+
+
 ------------- Details ------------------
 
 common_test:InitCfg 

@@ -197,7 +197,6 @@ func startUp(progname string, args []string) (*engine_t, error) {
 }
 
 func Main() {
-    LogInit()
     engine, err := startUp(os.Args[0], os.Args[1:])
     if err != nil {
         LogError("Engine aborting ...")

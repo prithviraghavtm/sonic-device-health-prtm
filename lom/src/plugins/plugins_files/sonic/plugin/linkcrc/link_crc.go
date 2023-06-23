@@ -8,7 +8,7 @@ import (
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
     "lom/src/plugins/plugins_common"
-    "lom/src/plugins/sonic/client/dbclient"
+    "lom/src/plugins/plugins_files/sonic/client/dbclient"
     "strings"
     "time"
 )
@@ -53,8 +53,19 @@ type LinkCRCDetectionPlugin struct {
     plugin_version string
 }
 
+func NewLinkCRCDetectionPlugin(...interface{}) plugins_common.Plugin {
+    // Create and return a new instance of MyPlugin
+    return &LinkCRCDetectionPlugin{}
+}
+
+func init() {
+    // Register the plugin with plugin manager
+    plugins_common.RegisterPlugin("link_crc", NewLinkCRCDetectionPlugin)
+}
+
 /* Inheritied from Plugin */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcommon.ActionCfg_t) error {
+    lomcommon.LogInfo("Started Init() for (%s)", "link_crc")
     // Get config settings or assign default values.
     var resultMap map[string]interface{}
     jsonErr := json.Unmarshal([]byte(actionConfig.ActionKnobs), &resultMap)
@@ -83,12 +94,12 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcomm
     linkCrcDetectionPlugin.counterRepository = &dbclient.CounterRepository{RedisProvider: &dbclient.RedisProvider{}}
     linkCrcDetectionPlugin.currentMonitoredInterfaces = map[string]LinkCrcDetectorInterface{}
     linkCrcDetectionPlugin.reportingFreqLimiter = plugins_common.GetDefaultDetectionFrequencyLimiter()
-    linkCrcDetectionPlugin.plugin_version = link_crc_plugin_version
     err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
     if err != nil {
         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
         return err
     }
+    lomcommon.LogInfo("Successfully Init() for (%s)", "link_crc")
     return nil
 }
 
@@ -165,8 +176,8 @@ func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) executeShutdown() error {
     return nil
 }
 
-func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) GetPluginId() *plugins_common.PluginId {
-    return &plugins_common.PluginId{Name: linkCrcDetectionPlugin.PluginName, Version: linkCrcDetectionPlugin.plugin_version}
+func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) GetPluginID() plugins_common.PluginId {
+    return plugins_common.PluginId{Name: "link_crc", Version: "1.0.0.0"}
 }
 
 type LinkCrcDetectorInterface interface {

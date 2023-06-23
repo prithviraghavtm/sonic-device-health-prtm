@@ -213,6 +213,9 @@ This method is promoted to the plugin. Honors shutdown when shutdown is invoked 
 func (periodicDetectionPluginUtil *PeriodicDetectionPluginUtil) Request(
     hbchan chan PluginHeartBeat,
     request *lomipc.ActionRequestData) *lomipc.ActionResponseData {
+
+    lomcommon.LogInfo("STarted Request() for (%s)", periodicDetectionPluginUtil.PluginName)
+
     if request.Timeout > 0 {
         return GetResponse(request, "", "", ResultCodeInvalidArgument, "Invalid Timeout value for detection plugin")
     }

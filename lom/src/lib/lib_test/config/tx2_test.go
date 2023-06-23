@@ -3,6 +3,7 @@ package lib_test
 import (
     "fmt"
     "lom/src/lib/lomcommon"
+    "lom/src/lib/lomipc"
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
@@ -305,8 +306,8 @@ func TestGoroutineTracker(t *testing.T) {
             panic("Error creating goroutine tracker")
         }
 
-        goroutinetracker.Start("test", func(a int, b int) { fmt.Printf("1111111111111111 %d %d", a, b) }, 10, 20)
-        goroutinetracker.Start("test1", func() { fmt.Printf("1111111111111111") })
+        goroutinetracker.Start("test", func(a int, b int) { fmt.Printf("some value %d %d", a, b) }, 10, 20)
+        goroutinetracker.Start("test1", func() { fmt.Printf("some value") })
         var ptr = &MyStruct{"hello"}
         goroutinetracker.Start("test3", ptr.Print)
         goroutinetracker.Start("test4", ptr.PrintArg, 10, 20)
@@ -622,4 +623,210 @@ func TestLogPeriodic(t *testing.T) {
         time.Sleep(100 * time.Millisecond)
         assert.NotNil(t, err)
     })
+}
+
+//------------------------------------------ End logperiodic Helper.go  -------------------------------------------------------------//
+
+// ------------------------------------------ server_transport.go-------------------------------------------------------------//
+
+func TestPrintActionRequest(t *testing.T) {
+    request := &lomipc.ActionRequestData{
+        Action:            "test",
+        InstanceId:        "123",
+        AnomalyInstanceId: "456",
+        AnomalyKey:        "789",
+        Timeout:           10,
+        Context: []*lomipc.ActionResponseData{
+            &lomipc.ActionResponseData{
+                Action:            "test",
+                InstanceId:        "123",
+                AnomalyInstanceId: "456",
+                AnomalyKey:        "789",
+                Response:          "response",
+                ResultCode:        0,
+                ResultStr:         "success",
+            },
+        },
+    }
+
+    output := lomipc.PrintActionRequest(request, true)
+
+    expectedOutput := "Action: test InstanceId: 123 AnomalyInstanceId: 456 AnomalyKey: 789 " +
+        "Timeout: 10 Responses: Response 1: Action: test InstanceId: 123 AnomalyInstanceId: 456 AnomalyKey: " +
+        "789 Response: response ResultCode: 0 ResultStr: success"
+
+    if output != expectedOutput {
+        t.Errorf("PrintActionRequest() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+
+    output = lomipc.PrintActionRequest(nil, true)
+    expectedOutput = "Invalid request"
+
+    if output != expectedOutput {
+        t.Errorf("PrintActionRequest() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+}
+
+func TestPrintServerRequest(t *testing.T) {
+    actionRequest := lomipc.ActionRequestData{
+        Action:            "test",
+        InstanceId:        "123",
+        AnomalyInstanceId: "456",
+        AnomalyKey:        "789",
+        Timeout:           10,
+        Context: []*lomipc.ActionResponseData{
+            &lomipc.ActionResponseData{
+                Action:            "test",
+                InstanceId:        "123",
+                AnomalyInstanceId: "456",
+                AnomalyKey:        "789",
+                Response:          "response",
+                ResultCode:        0,
+                ResultStr:         "success",
+            },
+        },
+    }
+
+    shutdownRequest := lomipc.ShutdownRequestData{}
+
+    serverRequestAction := &lomipc.ServerRequestData{
+        ReqType: lomipc.TypeServerRequestAction,
+        ReqData: actionRequest,
+    }
+
+    serverRequestShutdown := &lomipc.ServerRequestData{
+        ReqType: lomipc.TypeServerRequestShutdown,
+        ReqData: shutdownRequest,
+    }
+
+    outputAction := lomipc.PrintServerRequest(serverRequestAction, true)
+
+    expectedOutputAction := "Action: test InstanceId: 123 AnomalyInstanceId: 456 AnomalyKey: 789 " +
+        "Timeout: 10 Responses: Response 1: Action: test InstanceId: 123 AnomalyInstanceId: 456 " +
+        "AnomalyKey: 789 Response: response ResultCode: 0 ResultStr: success"
+
+    if outputAction != expectedOutputAction {
+        t.Errorf("PrintServerRequest() returned unexpected output for action request. Expected: %s, Got: %s",
+            expectedOutputAction, outputAction)
+    }
+
+    outputShutdown := lomipc.PrintServerRequest(serverRequestShutdown, true)
+
+    expectedOutputShutdown := "Shutdown request"
+
+    if outputShutdown != expectedOutputShutdown {
+        t.Errorf("PrintServerRequest() returned unexpected output for shutdown request. Expected: %s, Got: %s",
+            expectedOutputShutdown, outputShutdown)
+    }
+
+    // nil requeat
+    output := lomipc.PrintServerRequest(nil, true)
+    expectedOutput := "Invalid request"
+
+    if output != expectedOutput {
+        t.Errorf("PrintActionRequest() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+
+    // unknown request
+    unknownrequest := &lomipc.ServerRequestData{
+        ReqData: struct{}{}, // Pass an empty struct as the request data
+    }
+    output = lomipc.PrintServerRequest(unknownrequest, true)
+    expectedOutput = "Unknown request type: struct {}"
+
+    if output != expectedOutput {
+        t.Errorf("PrintServerRequest() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+}
+
+func TestPrintActionResponseData(t *testing.T) {
+    response := &lomipc.ActionResponseData{
+        Action:            "test",
+        InstanceId:        "123",
+        AnomalyInstanceId: "456",
+        AnomalyKey:        "789",
+        Response:          "response",
+        ResultCode:        0,
+        ResultStr:         "success",
+    }
+
+    output := lomipc.PrintActionResponseData(response)
+
+    expectedOutput := "Action: test InstanceId: 123 AnomalyInstanceId: 456 AnomalyKey: 789 " +
+        "Response: response ResultCode: 0 ResultStr: success"
+
+    if output != expectedOutput {
+        t.Errorf("PrintActionResponseData() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+}
+
+func TestPrintHeartbeatNotification(t *testing.T) {
+    notification := lomipc.MsgNotifyHeartbeat{
+        Action:    "test",
+        Timestamp: 123,
+    }
+
+    output := lomipc.PrintHeartbeatNotification(notification)
+
+    expectedOutput := "Heartbeat notification: test 123"
+
+    if output != expectedOutput {
+        t.Errorf("PrintHeartbeatNotification() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+}
+
+func TestPrintServerResponse(t *testing.T) {
+    actionResponse := &lomipc.ActionResponseData{
+        Action:            "test",
+        InstanceId:        "123",
+        AnomalyInstanceId: "456",
+        AnomalyKey:        "789",
+        Response:          "response",
+        ResultCode:        0,
+        ResultStr:         "success",
+    }
+
+    serverResponse := &lomipc.MsgSendServerResponse{
+        ReqType: lomipc.TypeServerRequestAction,
+        ResData: actionResponse,
+    }
+
+    output := lomipc.PrintServerResponse(serverResponse)
+
+    expectedOutput := "Action: test InstanceId: 123 AnomalyInstanceId: 456 AnomalyKey: 789 Response: response " +
+        "ResultCode: 0 ResultStr: success"
+
+    if output != expectedOutput {
+        t.Errorf("PrintServerResponse() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+
+    notification := lomipc.MsgNotifyHeartbeat{
+        Action:    "test",
+        Timestamp: 123,
+    }
+
+    output = lomipc.PrintServerResponse(notification)
+
+    expectedOutput = "Heartbeat notification: test 123"
+
+    if output != expectedOutput {
+        t.Errorf("TestPrintServerResponse() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+
+    //invalid response
+    output = lomipc.PrintServerResponse(nil)
+    expectedOutput = "Unknown response type: <nil>"
+    if output != expectedOutput {
+        t.Errorf("PrintServerResponse() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
+
+    //unknown response
+    unknownresponse := &lomipc.MsgSendServerResponse{
+        ResData: struct{}{}, // Pass an empty struct as the response data
+    }
+    output = lomipc.PrintServerResponse(unknownresponse)
+    expectedOutput = "Invalid response data"
+    if output != expectedOutput {
+        t.Errorf("PrintServerResponse() returned unexpected output. Expected: %s, Got: %s", expectedOutput, output)
+    }
 }

@@ -92,21 +92,24 @@ var chTestHeartbeat = make(chan string)
  */
 var globals_conf = `{"ENGINE_HB_INTERVAL_SECS" : 3 }`
 
+var procs_conf = `{}`
+
 /*
  *  Actions.conf
  */
-var actions_conf = `{ "actions": [
-        { "name": "Detect-0" },
-        { "name": "Safety-chk-0", "Timeout": 1},
-        { "name": "Mitigate-0", "Timeout": 6},
-        { "name": "Detect-1" },
-        { "name": "Safety-chk-1", "Timeout": 7},
-        { "name": "Mitigate-1", "Timeout": 8},
-        { "name": "Detect-2" },
-        { "name": "Safety-chk-2", "Timeout": 1},
-        { "name": "Mitigate-2", "Timeout": 6},
-        { "name": "Disabled-0", "Disable": true}
-        ] }`
+var actions_conf = `{
+        "Detect-0" : { "name": "Detect-0" },
+        "Safety-chk-0" : { "name": "Safety-chk-0", "Timeout": 1},
+        "Mitigate-0" : { "name": "Mitigate-0", "Timeout": 6},
+        "Detect-1" : { "name": "Detect-1" },
+        "Safety-chk-1" : { "name": "Safety-chk-1", "Timeout": 7},
+        "Mitigate-1" : { "name": "Mitigate-1", "Timeout": 8},
+        "Detect-2" : { "name": "Detect-2" },
+        "Safety-chk-2" : { "name": "Safety-chk-2", "Timeout": 1},
+        "Mitigate-2" : { "name": "Mitigate-2", "Timeout": 6},
+        "Disabled-0" : { "name": "Disabled-0", "Disable": true},
+        "Detect-3" : { "name": "Detect-3" }
+        }`
 
 var bindings_conf = `{ "bindings": [
     {
@@ -138,7 +141,15 @@ var bindings_conf = `{ "bindings": [
             {"name": "Safety-chk-2", "sequence": 1 },
             {"name": "Safety-chk-0", "sequence": 2 },
             {"name": "Mitigate-2", "sequence": 3 }
-            ]
+        ]
+    },
+    {
+        "SequenceName": "bind-3", 
+        "Priority": 0,
+        "Timeout": 8,
+        "Actions": [
+            {"name": "Detect-3" }
+        ]
     }
 ]}`
 
@@ -1163,6 +1174,7 @@ func initConfig(t *testing.T) {
     if !initConfigDone {
         createFile(t, "globals.conf.json", globals_conf)
         createFile(t, "actions.conf.json", actions_conf)
+        createFile(t, "procs.conf.json", procs_conf)
         createFile(t, "bindings.conf.json", bindings_conf)
 
         initConfigDone = true

@@ -72,10 +72,10 @@ func (p *testEntry_t) toStr() string {
 type testEntriesList_t map[int]testEntry_t
 type testCollectionId_t string
 type testCollectionEntry_t struct {
+    desc        string
     preSetup    []testCollectionId_t /* List to run as pre-setup */
     testEntries testEntriesList_t    /* tests to run */
     postCleanup []testCollectionId_t
-    desc        string
 }
 
 type testCollections_t map[testCollectionId_t]*testCollectionEntry_t
@@ -492,6 +492,76 @@ func init() {
             },
         },
         postCleanup: []testCollectionId_t{}, /* none */
+    }
+
+    testCollections["seq_empty"] = &testCollectionEntry_t{
+        desc:     "A successful empty sequence with Detection only",
+        preSetup: []testCollectionId_t{"registrations_setup"},
+        testEntries: testEntriesList_t{
+            /* Requests are expected in the same order as registration */
+            130: {
+                id:     REG_ACTION,
+                clTx:   CLIENT_1,
+                args:   []any{"Detect-3"},
+                failed: false,
+                desc:   "action detect-3 register succeed",
+            },
+            /* Requests are expected in the same order as registration */
+            140: {
+                id:     RECV_REQ,
+                clTx:   CLIENT_0,
+                seqId:  1, /* Use non-zero, default is 0. Make it explicit */
+                result: []any{&ActionRequestData{Action: "Detect-0"}},
+                desc:   "Read server request for Detect-0",
+            },
+            142: {
+                id:     RECV_REQ,
+                clTx:   CLIENT_1,
+                seqId:  2,
+                result: []any{&ActionRequestData{Action: "Detect-1"}},
+                desc:   "Read server request for Detect-1",
+            },
+            144: {
+                id:     RECV_REQ,
+                clTx:   CLIENT_1,
+                seqId:  3,
+                result: []any{&ActionRequestData{Action: "Detect-2"}},
+                desc:   "Read server request for Detect-2",
+            },
+            145: {
+                id:     RECV_REQ,
+                clTx:   CLIENT_1,
+                seqId:  4,
+                result: []any{&ActionRequestData{Action: "Detect-3"}},
+                desc:   "Read server request for Detect-3",
+            },
+            146: {
+                id:    SEND_RES,
+                clTx:  CLIENT_1,
+                seqId: 4,
+                args:  []any{&ActionResponseData{Action: "Detect-3", AnomalyKey: "Key-Detect-3", Response: "Detect-3 detected"}},
+                desc:  "Send res for detect3",
+            },
+            160: {
+                id:    SEQ_COMPLETE,
+                seqId: 4,
+                desc:  "Verify seq complete",
+            },
+            164: {
+                id:     RECV_REQ,
+                clTx:   CLIENT_1,
+                seqId:  5, /* Use non-zero, default is 0. Make it explicit */
+                result: []any{&ActionRequestData{Action: "Detect-3"}},
+                desc:   "Read server request for Detect-3",
+            },
+            166: {
+                /* Local engine level verification */
+                id:   CHK_ACTIV_REQ,
+                args: []any{"Detect-0", "Detect-1", "Detect-2", "Detect-3"},
+                desc: "Verify active requests only for actions in args",
+            },
+        },
+        postCleanup: []testCollectionId_t{"registrations_cleanup"},
     }
 
     testCollections["seq_success"] = &testCollectionEntry_t{

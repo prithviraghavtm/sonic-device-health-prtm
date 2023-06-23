@@ -1,85 +1,91 @@
 {
-    "Actions": [
-        {
-            "Name": "link_flap",
-            "Type": "Detection",
-            "Timeout": 0,
-            "HeartbeatInt": 2,
-            "Disable": false,
-            "Mimic": true,
-            "ActionKnobs": "test actions"
-        },
-        {
-            "Name": "dummy_action",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "ActionKnobs": "test actions"
-        },
-        {
-            "Name": "plmgr_plugin_2",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": true,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "plmgr_plugin_3",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "test_plugin_001",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "test_plugin_002",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "test_plugin_001_bad",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "test_startup_plugin_001",
-            "Type": "dummy_type",
-            "Timeout": 10,
-            "HeartbeatInt": 5,
-            "Disable": false,
-            "Mimic": false,
-            "Act,ionKnobs": "test actions"
-        },
-        {
-            "Name": "GenericPluginDetection",
-            "Type": "Detection",
-            "Timeout": 0,
-            "HeartbeatInt": 2,
-            "Disable": false,
-            "Mimic": true,
-            "ActionKnobs": "test actions"
-        }
-    ]
+
+	"link_flap": {
+		"Name": "link_flap",
+		"Type": "Detection",
+		"Timeout": 0,
+		"HeartbeatInt": 2,
+		"Disable": false,
+		"Mimic": true,
+		"ActionKnobs": "test actions"
+	},
+	"dummy_action": {
+		"Name": "dummy_action",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"ActionKnobs": "test actions"
+	},
+
+	"plmgr_plugin_2": {
+		"Name": "plmgr_plugin_2",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": true,
+		"Mimic": false,
+		"Act,ionKnobs": "test actions"
+	},
+
+	"plmgr_plugin_3": {
+		"Name": "plmgr_plugin_3",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"Act,ionKnobs": "test actions"
+	},
+
+	"test_plugin_001": {
+		"Name": "test_plugin_001",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"Act,ionKnobs": "test actions"
+	},
+
+	"test_plugin_002": {
+		"Name": "test_plugin_002",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"ActionKnobs": "test actions"
+	},
+
+	"test_plugin_001_bad": {
+		"Name": "test_plugin_001_bad",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"ActionKnobs": "test actions"
+	},
+
+	"test_startup_plugin_001": {
+		"Name": "test_startup_plugin_001",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"ActionKnobs": "test actions"
+	},
+
+	"GenericPluginDetection": {
+		"Name": "GenericPluginDetection",
+		"Type": "Detection",
+		"Timeout": 0,
+		"HeartbeatInt": 2,
+		"Disable": false,
+		"Mimic": true,
+		"ActionKnobs": "test actions"
+	}
 }

@@ -1,12 +1,11 @@
 {
-    "procs": {
-        "proc_0": {
-            "link_crc": {
-                "name": "link_crc",
-                "version": "1.0.0.0",
-                "path": ""
-            }
-        }
-    }
+	"procs": {
+		"proc_0": {
+			"link_crc": {
+				"name": "link_crc",
+				"version": "1.0.0.0",
+				"path": ""
+			}
+		}
+	}
 }
-

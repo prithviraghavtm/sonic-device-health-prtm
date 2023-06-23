@@ -30,9 +30,10 @@ const (
     LoMActionActive                                                      /* 4105 */
     LoMSequenceTimeout                                                   /* 4106 */
     LoMSequenceIncorrect                                                 /* 4107 */
-    LoMShutdown                                                          /* 4108 */
-    LoMInternalError                                                     /* 4109 */
-    LoMErrorCnt                                                          /* 4110 */
+    LoMSequenceEmpty                                                     /* 4108 */
+    LoMShutdown                                                          /* 4109 */
+    LoMInternalError                                                     /* 4110 */
+    LoMErrorCnt                                                          /* 4111 */
 )
 
 var LoMResponseStr = []string{
@@ -48,7 +49,8 @@ var LoMResponseStr = []string{
     "Action already active",           /* LoMActionActive */
     "Sequence timed out",              /* LoMSequenceTimeout */
     "Sequence state incorrect",        /* LoMSequenceIncorrect */
-    "LOM system shutdown",             /* LoMSequenceIncorrect */
+    "Sequence empty",                  /* LoMSequenceEmpty */
+    "LOM system shutdown",             /* LoMShutdown */
     "LoM Internal error",              /* LoMInternalError */
 }
 

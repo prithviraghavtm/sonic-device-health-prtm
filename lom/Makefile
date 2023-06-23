@@ -8,6 +8,7 @@ GUID = $(shell id -g)
 
 
 GO := /usr/local/go1.20.3/go/bin/go
+
 GOFMT := $(GO)fmt
 INSTALL := /usr/bin/install
 
@@ -25,6 +26,8 @@ TEST_DIR := $(BUILD_DIR)/test
 ifeq "${TEST_FLAG}" "-v"
 PYTEST_VERBOSE= --addopts "-s"
 endif
+
+LIB_TEST_FLAGS = -v
 
 export GO111MODULE=on
 export LOM_LIB_PATH=$(PWD)/build/lib
@@ -61,97 +64,159 @@ format_code:
 
 # Define the file coverage extraction function
 define extract_file_coverage
-	@echo "*******************************************************"
-	@echo "Extracting file coverages:"
-	@file_coverage="$$(sed -n 's/.*<option value="[^"]\+">\([^<]\+\).* (\([^)]\+\%.*\)<\/option>.*/\1 (\2)/p' $(1))"; 
-	echo "$${file_coverage}"
-	@echo "*******************************************************"
-	@echo ""
-	@echo ""
+#!/bin/bash
+echo "====================================================================================="
+echo -e "Detail file coverage from $$1 :"
+echo "_____________________________________________________________________________________"
+file_coverage="$$(sed -n 's/.*<option value="[^"]\+">\([^<]\+\).* (\([^)]\+\%.*\)<\/option>.*/\1 (\2)/p' "$$1")"; 
+echo "$${file_coverage}"
+echo "====================================================================================="
 endef
+export extract_file_coverage
 
-.PHONY: all clean format_code
+add-extract_file_coverage: 
+	$(shell mkdir -p $(BUILD_DIR))
+	$(shell echo > $(BUILD_DIR)/extract_file_coverage.sh)
+	@echo "$$extract_file_coverage" >> $(BUILD_DIR)/extract_file_coverage.sh
+	$(shell chmod 777 $(BUILD_DIR)/extract_file_coverage.sh)
 
-all: format_code $(CMN_C_LIB) $(ENGINE_BIN) $(LIB_TEST) $(ENGINE_TEST) $(PLUGIN_MANAGER_TEST) \
-	$(SONIC_DBCLIENT_TEST) $(SONIC_LINK_CRC_TEST) $(PLUGINS_COMMON_TEST) $(PY_TEST) \
-	$(PLUGIN_MANAGER_BIN)
+# Clean up the script file
+clean-extract_file_coverage:
+	rm -f $(BUILD_DIR)/extract_file_coverage.sh
 
+# Define the aggregate file coverage extraction function
+define aggregate_file_coverage
+#!/bin/bash
+echo "====================================================================================="
+echo -e "Aggregate file coverages : "
+echo "_____________________________________________________________________________________"
+for file in $(TEST_DIR)/*.html; do
+    if [ -f "$$file" ]; then
+        file_coverage=$$(sed -n 's/.*<option value="[^"]\+">\([^<]\+\).* (\([^)]\+\%.*\)<\/option>.*/\1 (\2)/p' "$$file")
+        echo "$$file_coverage"
+    fi
+done
+echo "_____________________________________________________________________________________"
+endef
+export aggregate_file_coverage
+
+# Print all the source fiules coverages at one place
+add-aggregate_file_coverage: 
+	$(shell mkdir -p $(BUILD_DIR))
+	$(shell echo > $(BUILD_DIR)/aggregate_file_coverage.sh)
+	@echo "$$aggregate_file_coverage" >> $(BUILD_DIR)/aggregate_file_coverage.sh
+	$(shell chmod 777 $(BUILD_DIR)/aggregate_file_coverage.sh)
+
+# Clean up the script file
+clean-aggregate-file_coverage:
+	rm -f $(BUILD_DIR)/aggregate_file_coverage.sh
+
+.PHONY: all clean format_code clean-extract_file_coverage add-extract_file_coverage clean-aggregate-file_coverage add-aggregate_file_coverage COMMON_DEPS
+
+COMMON_DEPS := format_code add-extract_file_coverage add-aggregate_file_coverage $(CMN_C_LIB) $(ENGINE_BIN) $(PLUGIN_MANAGER_BIN) $(LIB_TEST) $(ENGINE_TEST) \
+	$(PLUGIN_MANAGER_TEST) $(SONIC_DBCLIENT_TEST) $(SONIC_LINK_CRC_TEST) $(PLUGINS_COMMON_TEST) \
+	$(PY_TEST)
+
+all: $(COMMON_DEPS)
+	$(BUILD_DIR)/aggregate_file_coverage.sh
+
+all-silent: LIB_TEST_FLAGS :=
+all-silent: $(COMMON_DEPS)
+	$(BUILD_DIR)/aggregate_file_coverage.sh
 
 $(CMN_C_LIB): $(SRC_FILES)
 	mkdir -p $(LIB_DIR)
 	$(GO) build -buildmode=c-shared -o $@ $(CMN_C_LIB_FILES)
-	$(info "Built $(CMN_C_LIB)")
+	@echo -e "Successfully Build c lib\n\n"
 
 $(ENGINE_BIN): $(SRC_FILES)
 	mkdir -p $(BIN_DIR)
 	$(GO) build  -o $@ lom/src/engine
-	$(info "Built lom-engine")
+	@echo -e "Successfully Build lom-engine\n\n"
 
 $(PLUGIN_MANAGER_BIN): $(SRC_FILES)
 	mkdir -p $(BIN_DIR)
 	$(GO) build -o $@ lom/src/pluginmgr
-	$(info "Built plugin manager")
-
+	@echo -e "Successfully build plugin manager\n\n"
 
 $(LIB_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test -p 1 $(TEST_FLAG) -coverprofile=$(TEST_DIR)/LibCoverprofile.out \
 		-coverpkg lom/src/lib/lomipc,lom/src/lib/lomcommon \
-		-covermode=atomic -v ./src/lib/lib_test ./src/lib/lib_test/config || (echo "LibTest failed $$?"; exit 1)
+		-covermode=atomic $(LIB_TEST_FLAGS) ./src/lib/lib_test ./src/lib/lib_test/config || (echo "LibTest failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/LibCoverprofile.out -o $(TEST_DIR)/LibCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/LibCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/LibCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/LibCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed LIB Test\n\n"
 
 $(ENGINE_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test $(TEST_FLAG) -coverprofile=$(TEST_DIR)/EngineCoverprofile.out \
-		-coverpkg lom/src/engine \
-		-covermode=atomic -v lom/src/engine || (echo "EngineTest failed $$?"; exit 1)
+		-coverpkg lom/src/engine/engine \
+		-covermode=atomic $(LIB_TEST_FLAGS) lom/src/engine/engine || (echo "EngineTest failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/EngineCoverprofile.out -o $(TEST_DIR)/EngineCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/EngineCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/EngineCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/EngineCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed engine Test\n\n"
 
 $(PLUGIN_MANAGER_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test -p 1 $(TEST_FLAG) -coverprofile=$(TEST_DIR)/PluginManagerCoverprofile.out \
 		-coverpkg lom/src/pluginmgr/pluginmgr_common \
-		-covermode=atomic -v ./src/pluginmgr/pluginmgr_common  || (echo "Plugin manager test failed $$?"; exit 1)
+		-covermode=atomic $(LIB_TEST_FLAGS) ./src/pluginmgr/pluginmgr_common  || (echo "Plugin manager test failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/PluginManagerCoverprofile.out -o $(TEST_DIR)/PluginManagerCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/PluginManagerCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/PluginManagerCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/PluginManagerCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed plugin manager Test\n\n"
 
 $(SONIC_DBCLIENT_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test $(TEST_FLAG) -coverprofile=$(TEST_DIR)/SonicDbClientCoverprofile.out \
-		-coverpkg lom/src/plugins/sonic/client/dbclient \
-		-covermode=atomic -v lom/src/plugins/sonic/client/dbclient || (echo "SonicDbClient Test failed $$?"; exit 1)
+		-coverpkg lom/src/plugins/plugins_files/sonic/client/dbclient \
+		-covermode=atomic $(LIB_TEST_FLAGS) lom/src/plugins/plugins_files/sonic/client/dbclient || (echo "SonicDbClient Test failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/SonicDbClientCoverprofile.out -o $(TEST_DIR)/SonicDbClientCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/SonicDbClientCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/SonicDbClientCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/SonicDbClientCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed sonic DB Test\n\n"
 
 $(PY_TEST): $(SRC_FILES) $(PY_FILES)
 	mkdir -p $(TEST_DIR)
 	pushd python; \
 	python3 setup.py test $(PYTEST_VERBOSE); \
 	popd
+	@echo -e "Successfully completed Python Test\n\n"
 
 $(SONIC_LINK_CRC_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test $(TEST_FLAG) -coverprofile=$(TEST_DIR)/SonicLinkCrcCoverprofile.out \
-				-coverpkg lom/src/plugins/sonic/plugin/linkcrc \
-				-covermode=atomic -v lom/src/plugins/sonic/plugin/linkcrc || (echo "SonicLinkCrc plugin Test failed $$?"; exit 1)
+				-coverpkg lom/src/plugins/plugins_files/sonic/plugin/linkcrc \
+				-covermode=atomic $(LIB_TEST_FLAGS) lom/src/plugins/plugins_files/sonic/plugin/linkcrc || (echo "SonicLinkCrc plugin Test failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/SonicLinkCrcCoverprofile.out -o $(TEST_DIR)/SonicLinkCrcCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/SonicLinkCrcCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/SonicLinkCrcCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/SonicLinkCrcCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed sonic link crc Test\n\n"
 	
 $(PLUGINS_COMMON_TEST): $(SRC_FILES) $(TEST_FILES)
 	mkdir -p $(TEST_DIR)
 	${GO} test $(TEST_FLAG) -coverprofile=$(TEST_DIR)/PluginsCommonCoverprofile.out \
 		-coverpkg lom/src/plugins/plugins_common \
-				-covermode=atomic -v lom/src/plugins/plugins_common || (echo "PluginsCommon Tests failed $$?"; exit 1)
+				-covermode=atomic $(LIB_TEST_FLAGS) lom/src/plugins/plugins_common || (echo "PluginsCommon Tests failed $$?"; exit 1)
 	${GO} tool cover -html=$(TEST_DIR)/PluginsCommonCoverprofile.out -o $(TEST_DIR)/PluginsCommonCoverprofile.html
-	$(call extract_file_coverage,$(TEST_DIR)/PluginsCommonCoverprofile.html)
+	@if [ -f "$(TEST_DIR)/PluginsCommonCoverprofile.html" ]; then \
+		$(BUILD_DIR)/extract_file_coverage.sh $(TEST_DIR)/PluginsCommonCoverprofile.html; \
+	fi
 	touch $@
+	@echo -e "Successfully completed plugins common Test\n\n"
 
-clean:
+clean: clean-extract_file_coverage clean-aggregate-file_coverage
 	rm -rf $(BUILD_DIR)

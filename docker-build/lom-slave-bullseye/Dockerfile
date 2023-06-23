@@ -423,6 +423,9 @@ RUN apt-get -y build-dep isc-dhcp
 # Install vim
 RUN apt-get install -y vim
 
+# Install tree
+RUN apt-get install -y tree
+
 # Install rsyslog
 RUN apt-get install -y rsyslog
 RUN cd /usr/src/gtest && cmake . && make -C /usr/src/gtest

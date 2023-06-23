@@ -722,7 +722,7 @@ func testEngine(t *testing.T) {
 
     os.Args = []string{"-user=bla"}
     ResetLastError()
-    main()
+    Main()
     if GetLastError() == nil {
         t.Fatalf("****TEST FAILED: engine: main to fail for invalid args")
     }

@@ -3,6 +3,7 @@
 #
 import json
 import sys
+import syslog
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,11 +13,12 @@ from . import common_test
 sys.path.append("src/common")
 import engine_apis
 import engine_rpc_if
+import common
 
 
 EXP_SEQ_BIND_0 = '{"SequenceName":"bind-0","Timeout":2,"Priority":0,"Actions":[{"Name":"Detect-0","Mandatory":false,"Timeout":0,"Sequence":0},{"Name":"Safety-chk-0","Mandatory":false,"Timeout":1,"Sequence":1},{"Name":"Mitigate-0","Mandatory":false,"Timeout":6,"Sequence":2}]}'
 
-EXP_ACT_DETECT_0 = '{"Name":"Detect-0","Type":"","Timeout":0,"HeartbeatInt":0,"Disable":false,"Mimic":false,"ActionKnobs":""}'
+EXP_ACT_DETECT_0 = '{"Name":"Detect-0","Type":"","Timeout":0,"HeartbeatInt":0,"Disable":false,"Mimic":false,"ActionKnobs":null}'
 
 EXP_ACT_LIST = '{"Detect-0":{"IsAnomaly":true},"Detect-1":{"IsAnomaly":true},"Mitigate-0":{"IsAnomaly":false},"Mitigate-1":{"IsAnomaly":false},"Safety-chk-0":{"IsAnomaly":false},"Safety-chk-1":{"IsAnomaly":false}}'
 
@@ -263,7 +265,7 @@ class TestCfg(object):
             return fn(args[0], args[1])
         if ln == 3:
             return fn(args[0], args[1], args[2])
-        log_panic("Fix test code args len({}) not handled. args:({})".format(ln, args))
+        common.log_panic("Fix test code args len({}) not handled. args:({})".format(ln, args))
 
 
     def callAPI(self, tc): 
@@ -275,6 +277,8 @@ class TestCfg(object):
     def testGlobal(self):
         # Create testmode file
 
+        common.set_log_level(syslog.LOG_DEBUG)
+
         ret = common_test.InitCfg(True)
         assert ret == 0, f"lomLib.InitConfigPathForC failed ret={ret}"
 
@@ -285,18 +289,20 @@ class TestCfg(object):
         ret = common_test.InitCfg(False)
         assert ret == 0, f"lomLib.InitConfigPathForC failed ret={ret}"
 
-        ret = engine_apis.call_lom_lib(
-                engine_apis.LOM_LIB_FN_INDICES.LOM_LIB_FN_RUN_MODE)
-        assert ret == 2, f"lomLib.lomLib.GetLoMRunModeC ret{ret} != 2"
-
         id = 0
         for tc in testCfgList:
             ret = self.callAPI(tc)
+            if ret != tc["ret"]:
+                common.log_debug("ret=({})".format(ret))
+                common.log_debug("tc[ret]=({})".format(tc["ret"]))
+                common.log_debug("AAAAAAAAAAAAAAAAAAAAAA")
             assert ret == tc["ret"], f'id:{id} {tc["msg"]}'
             id += 1
 
 
     def testEngineApi(self):
+        common.set_log_level(syslog.LOG_DEBUG)
+
         ServerStart()
 
         for tc in testEngineAPIList:
@@ -309,6 +315,8 @@ class TestCfg(object):
 
 
     def testRPCApi(self):
+        common.set_log_level(syslog.LOG_DEBUG)
+
         ServerStart()
 
         for tc in testRpcList:

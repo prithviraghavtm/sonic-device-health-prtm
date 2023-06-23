@@ -16,7 +16,7 @@ const (
     MIN_PERIODIC_LOG_PERIOD_SECS = "MIN_PERIODIC_LOG_PERIOD_SECS"
 
     /* Look for this name in Env or file */
-    LOM_TESTMODE_NAME = "LoMTestMode"
+    LOM_RUN_MODE = "LOM_RUN_MODE"
 )
 
 const (
@@ -77,39 +77,14 @@ var lomRunMode = LoMRunMode_NotSet
 
 func GetLoMRunMode() LoMRunMode_t {
     if lomRunMode == LoMRunMode_NotSet {
-        if RunningTestMode {
-            /* Set by pytest */
-            lomRunMode = LoMRunMode_Test
-        } else if val, ok := os.LookupEnv(LOM_TESTMODE_NAME); ok {
-            if val == "yes" {
-                lomRunMode = LoMRunMode_Test
-            } else {
+        lomRunMode = LoMRunMode_Test
+        if val, ok := os.LookupEnv(LOM_RUN_MODE); ok {
+            if val == "PROD" {
                 lomRunMode = LoMRunMode_Prod
             }
         }
     }
     return lomRunMode
-}
-
-func SetLoMRunMode(mode LoMRunMode_t) error {
-    if (mode != LoMRunMode_Test) && (mode != LoMRunMode_Prod) {
-        return LogError("mode=(%v) is invalid", mode)
-    }
-
-    /* Call get to ensure, Env is checked first */
-    ctMode := GetLoMRunMode()
-
-    if ctMode == LoMRunMode_NotSet {
-        /* LOM_TESTMODE_NAME ("LoMTestMode") is not set in Env */
-        lomRunMode = mode
-    } else if ctMode != mode {
-        return LogError("Mode already set(%v) != new mode(%v)", ctMode, mode)
-    }
-    return nil
-}
-
-func ResetLoMMode() {
-    lomRunMode = LoMRunMode_NotSet
 }
 
 /*
@@ -221,13 +196,13 @@ type ProcPluginConfig_t struct {
 
 /* Action config as read from actions.conf.json */
 type ActionCfg_t struct {
-    Name         string
-    Type         string
-    Timeout      int    /* Timeout recommended for this action */
-    HeartbeatInt int    /* Heartbeat interval */
-    Disable      bool   /* true - Disabled */
-    Mimic        bool   /* true - Run but don't write/update device */
-    ActionKnobs  string /* Json String with action specific knobs */
+    Name         string          /* Action name e.g. link_crc*/
+    Type         string          /* Action type. can be Detection, Mitigation or Safety */
+    Timeout      int             /* Timeout recommended for this action */
+    HeartbeatInt int             /* Heartbeat interval */
+    Disable      bool            /* true - Disabled */
+    Mimic        bool            /* true - Run but don't write/update device */
+    ActionKnobs  json.RawMessage /* Json String with action specific knobs */
 }
 
 /* Map with action name */
@@ -298,11 +273,9 @@ type ConfigMgr_t struct {
 }
 
 func (p *ConfigMgr_t) readActionsConf(fl string) error {
-    actions := struct {
-        Actions []ActionCfg_t
-    }{}
-
+    actions := ActionsConfigList_t{}
     jsonFile, err := os.Open(fl)
+
     if err != nil {
         return err
     }
@@ -314,9 +287,7 @@ func (p *ConfigMgr_t) readActionsConf(fl string) error {
     } else if err := json.Unmarshal(byteValue, &actions); err != nil {
         return err
     } else {
-        for _, a := range actions.Actions {
-            p.actionsConfig[a.Name] = a
-        }
+        p.actionsConfig = actions
         return nil
     }
 }
@@ -423,14 +394,6 @@ func (p *ConfigMgr_t) loadConfigFiles(cfgFiles *ConfigFiles_t) error {
     }
     if err := p.readProcsConf(cfgFiles.ProcsFl); err != nil {
         return LogError("Procs: %s: %v", cfgFiles.ProcsFl, err)
-    }
-    test_mode_fl := filepath.Join(filepath.Dir(cfgFiles.GlobalFl), LOM_TESTMODE_NAME)
-    ResetLoMMode()
-    if _, err := os.Stat(test_mode_fl); os.IsNotExist(err) {
-        SetLoMRunMode(LoMRunMode_Prod)
-    } else {
-        LogDebug("Run in Test mode as fl(%s) exists. err(%v)", test_mode_fl, err)
-        SetLoMRunMode(LoMRunMode_Test)
     }
     return nil
 }

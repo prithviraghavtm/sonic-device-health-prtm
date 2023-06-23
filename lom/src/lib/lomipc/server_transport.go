@@ -374,6 +374,84 @@ func (tr *LoMTransport) ReadClientRequest(chAbort chan interface{}) (*LoMRequest
     }
 }
 
+/* PrintActionRequest prints the given ActionRequestData as a string.
+ * If includeResponses is true, it also includes the responses in the output.
+ * Returns the formatted string.
+ */
+func PrintActionRequest(request *ActionRequestData, includeResponses bool) string {
+    if request == nil {
+        return "Invalid request"
+    }
+
+    output := fmt.Sprintf("Action: %s InstanceId: %s AnomalyInstanceId: %s AnomalyKey: %s Timeout: %d",
+        request.Action, request.InstanceId, request.AnomalyInstanceId, request.AnomalyKey, request.Timeout)
+
+    if includeResponses {
+        responseOutput := " Responses: "
+        for i, response := range request.Context {
+            responseOutput += fmt.Sprintf("Response %d: ", i+1)
+            responseOutput += fmt.Sprintf("Action: %s InstanceId: %s AnomalyInstanceId: %s AnomalyKey: %s Response: %s ResultCode: %d ResultStr: %s",
+                response.Action, response.InstanceId, response.AnomalyInstanceId, response.AnomalyKey, response.Response, response.ResultCode, response.ResultStr)
+        }
+        output += responseOutput
+    }
+
+    return output
+}
+
+/* PrintServerRequest prints the given ServerRequestData as a string.
+ * If includeResponses is true, it also includes the responses in the output.
+ * Returns the formatted string.
+ */
+func PrintServerRequest(request *ServerRequestData, includeResponses bool) string {
+    if request == nil {
+        return "Invalid request"
+    }
+
+    switch reqData := request.ReqData.(type) {
+    case ActionRequestData:
+        return PrintActionRequest(&reqData, includeResponses)
+    case ShutdownRequestData:
+        return "Shutdown request"
+    default:
+        return fmt.Sprintf("Unknown request type: %T", reqData)
+    }
+}
+
+/* PrintActionResponseData prints the given ActionResponseData as a string.
+ * Returns the formatted string.
+ */
+func PrintActionResponseData(response *ActionResponseData) string {
+    return fmt.Sprintf("Action: %s InstanceId: %s AnomalyInstanceId: %s AnomalyKey: %s Response: %s ResultCode: %d ResultStr: %s",
+        response.Action, response.InstanceId, response.AnomalyInstanceId, response.AnomalyKey, response.Response, response.ResultCode, response.ResultStr)
+}
+
+/*
+ * PrintHeartbeatNotification prints the given MsgNotifyHeartbeat as a string.
+ */
+func PrintHeartbeatNotification(notification MsgNotifyHeartbeat) string {
+    return fmt.Sprintf("Heartbeat notification: %s %d", notification.Action, notification.Timestamp)
+}
+
+/* PrintServerResponse prints the given ServerResponse as a string.
+ * Returns the formatted string.
+ */
+func PrintServerResponse(response interface{}) string {
+    switch respData := response.(type) {
+    case *MsgSendServerResponse:
+        var msgSendServerResponse *MsgSendServerResponse = respData
+        resData, ok := msgSendServerResponse.ResData.(*ActionResponseData)
+        if !ok {
+            return "Invalid response data"
+        }
+        return PrintActionResponseData(resData)
+    case MsgNotifyHeartbeat:
+        return PrintHeartbeatNotification(respData)
+    default:
+        return fmt.Sprintf("Unknown response type: %T", respData)
+    }
+}
+
 func init_encoding() {
     gob.Register(MsgRegClient{})
     gob.Register(MsgDeregClient{})

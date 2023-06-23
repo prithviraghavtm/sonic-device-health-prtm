@@ -48,7 +48,7 @@ test() {
 }
 
 dbClientTest() { 
-  go test $1 -p 1 -coverprofile=dbclient_coverprofile.out� -coverpkg lom/src/vendors/sonic/client/dbclient -covermode=atomic lom/src/vendors/sonic/client/dbclient
+  go test $1 -p 1 -coverprofile=dbclient_coverprofile.out -coverpkg lom/src/vendors/sonic/client/dbclient -covermode=atomic lom/src/vendors/sonic/client/dbclient
   if [ $? -ne 0 ]; then
   	echo "Failed to run test"
   	exit -1

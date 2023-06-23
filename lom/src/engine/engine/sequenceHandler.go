@@ -685,7 +685,20 @@ func (p *SeqHandler_t) resumeSequence(seq *sequenceState_t) (errCode LoMResponse
         LogInfo("current req is active. Nothing to resume (%v)", *seq)
         return
     }
-
+    if seq.ctIndex >= len(seq.sequence.Actions) {
+        /*
+         * This would be true only for empty sequence as ProcessActionResponse
+         * would terminate a sequence upon last action.
+         */
+        if seq.ctIndex > 1 {
+            errCode = LoMSequenceIncorrect
+            errStr = fmt.Sprintf("Expect to hit here for empty seq only (%v)", *seq)
+        } else {
+            errCode = LoMSequenceEmpty
+            errStr = fmt.Sprintf("Configured as empty (%v)", *seq)
+        }
+        return
+    }
     nextAction := seq.sequence.Actions[seq.ctIndex]
 
     /* validate action */

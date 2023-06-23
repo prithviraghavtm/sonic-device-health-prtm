@@ -1,6 +1,10 @@
 {
-	"test-0-action-0": ["test-0-action-1", "test-0-action-2"],
-	"test-0-action-3": ["test-0-action-1", "test-0-action-2"],
-	"link_flap": ["link_safety", "link_down"],
-	"GenericPluginDetection": []
+	"bindings": [{
+		"SequenceName": "link_crc_bind-0",
+		"Priority": 0,
+		"Timeout": 2,
+		"Actions": [{
+			"name": "link_flap"
+		}]
+	}]
 }
