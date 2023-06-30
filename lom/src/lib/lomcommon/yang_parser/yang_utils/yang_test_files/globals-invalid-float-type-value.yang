@@ -1,0 +1,31 @@
+module globals-invalid-float-type-value {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/actions-sample-config-for-uts";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Global configurations for Device health agent for UTs";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+
+    leaf MinCrcError {
+        type decimal64 {
+            fraction-digits 6;
+        }
+        description "Minimum Crc error ratio that determines an outlier";
+        default "abc";
+        config true;
+    }
+}
