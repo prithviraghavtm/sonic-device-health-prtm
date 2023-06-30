@@ -1,0 +1,130 @@
+module device-health-actions-configs {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/device-health-global-configs";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Action specific configurations for Device health agent plugins";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+    grouping detection-action-config-common {
+        leaf Type {
+            type string;
+            description "Indicates Detection plugin";
+            default "Detection";
+            config true;
+        }
+
+        leaf Timeout {
+            type int64;
+            description "Timeout that needs to be honoured by detection plugin";
+            default 0;
+            config true;
+        }
+
+        leaf HeartbeatInt {
+            type int64;
+            description "Interval at which heartbeats need to be published by plugin";
+            default 30;
+            config true;
+        }
+
+        leaf Disable {
+            type boolean;
+            description "Indicates if plugin is disabled";
+            default false;
+            config true;
+        }
+
+        leaf Mimic {
+            type boolean;
+            description "Indicates if plugin is mimiced";
+            default false;
+            config true;
+        }
+    }
+
+    container link_crc {
+        leaf Name {
+                type string;
+                description "link crc";
+                default "link_crc";
+                config true;
+        }
+
+        container ActionKnobs {
+            leaf DetectionFreqInSecs {
+                type int64;
+                description "Frequency at which detection algorithm is executed in seconds";
+                default 30;
+                config true;
+            }
+
+            leaf IfInErrorsDiffMinValue {
+                type int64;
+                description "Minimum Interface input Errors diff for the detection algorithm to be executed";
+                default 0;
+                config true;
+            }
+
+            leaf InUnicastPacketsMinValue {
+                type int64;
+                description "Minimum Interface unicast packets count for the detection algorithm to be executed";
+                default 100;
+                config true;
+            }
+
+            leaf OutUnicastPacketsMinValue {
+                type int64;
+                description "Minimum Interface output packets count for the detection algorithm to be executed";
+                default 100;
+                config true;
+            }
+
+            leaf OutlierRollingWindowSize {
+                type int64;
+                description "Rollowing window to be used for storing outliers";
+                default 5;
+                config true;
+            }
+
+            leaf MinCrcError {
+                type decimal64 {
+                    fraction-digits 6;
+                }
+                description "Minimum Crc error ratio that determines an outlier";
+                default 0.000001;
+                config true;
+            }
+
+            leaf MinOutliersForDetection {
+                type int64;
+                description "Minimum number of outliers in look back period, that determines crc error";
+                default 2;
+                config true;
+            }
+
+            leaf LookBackPeriodInSecs {
+                type int64;
+                description "Period in seconds to look for outliers in the past";
+                default 125;
+                config true;
+            }
+        }
+
+        uses detection-action-config-common;
+    }
+}

@@ -6,16 +6,16 @@ import (
 )
 const (
 	device_health_actions_configs      string = "device-health-actions-configs"
-	device_health_actions_configs_path string = ".\\yang\\device-health-actions-configs.yang"
+	device_health_actions_configs_path string = "./yang_prod_configs/device-health-actions-configs.yang"
 
 	device_health_bindings_configs      string = "device-health-bindings-configs"
-	device_health_bindings_configs_path string = ".\\yang\\device-health-bindings-configs.yang"
+	device_health_bindings_configs_path string = "./yang_prod_configs/device-health-bindings-configs.yang"
 
 	device_health_globals_configs      string = "device-health-global-configs"
-	device_health_globals_configs_path string = ".\\yang\\device-health-global-configs.yang"
+	device_health_globals_configs_path string = "./yang_prod_configs/device-health-global-configs.yang"
 
 	device_health_procs_configs      string = "device-health-procs-configs"
-	device_health_procs_configs_path string = ".\\yang\\device-health-procs-configs.yang"
+	device_health_procs_configs_path string = "./yang_prod_configs/device-health-procs-configs.yang"
 
 	actions_conf_file_name  string = "actions.conf.json"
 	bindings_conf_file_name string = "bindings.conf.json"

@@ -1,0 +1,85 @@
+module device-health-global-configs {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/device-health-global-configs";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Global configurations for Device health agent";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+	leaf MAX_SEQ_TIMEOUT_SECS {
+			type int64;
+			description "Maximum sequence timeout in seconds";
+			default 120;
+			config true;
+	}
+		
+	leaf MIN_PERIODIC_LOG_PERIOD_SECS {
+			type int64;
+			description "Minimum periodic log period in seconds";
+			default 1;
+			config true;
+	}
+
+	leaf ENGINE_HB_INTERVAL_SECS {
+			type int64;
+			description "Engine heart beat interval in seconds";
+			default 10;
+			config true;
+	}
+
+	leaf INITIAL_DETECTION_REPORTING_FREQ_IN_MINS {
+			type int64;
+			description "Initial detection reporting frequency in minutes, used by plugins";
+			default 5;
+			config true;
+	}
+		
+	leaf SUBSEQUENT_DETECTION_REPORTING_FREQ_IN_MINS {
+			type int64;
+			description "Subsequent detection reporting frequency in minutes, used by plugins";
+			default 60;
+			config true;
+	}
+		
+	leaf INITIAL_DETECTION_REPORTING_MAX_COUNT {
+			type int64;
+			description "Initial detection reporting max count, used by plugins";
+			default 12;
+			config true;
+	}
+		
+	leaf PLUGIN_MIN_ERR_CNT_TO_SKIP_HEARTBEAT {
+			type int64;
+			description "Minimum consecutive plugin errors to skip heartbeat, used by plugins";
+			default 3;
+			config true;
+	}
+
+	leaf MAX_PLUGIN_RESPONSES {
+			type int64;
+			description "Max plugin responses allowed";
+			default 100;
+			config true;
+	}
+
+	leaf MAX_PLUGIN_RESPONSES_WINDOW_TIMEOUT_IN_SECS {
+			type int64;
+			description "Maximum plugin responses window timeout in seconds";
+			default 60;
+			config true;
+	}
+}
