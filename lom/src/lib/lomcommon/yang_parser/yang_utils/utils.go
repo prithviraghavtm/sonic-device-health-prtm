@@ -207,7 +207,7 @@ func GetMappingForBindingsYangConfig(module string, yangFilePath string) (map[st
 	return resultMap, nil
 }
 
-func WriteJsonIntoFile(mapping map[string]interface{}, fileName string) error {
+func WriteJsonIntoFile(mapping map[string]interface{}, folder string, fileName string) error {
 	jsonConfig, err := json.MarshalIndent(mapping, "  ", "  ")
 
 	if err != nil {
@@ -216,7 +216,7 @@ func WriteJsonIntoFile(mapping map[string]interface{}, fileName string) error {
 	}
 
 	fmt.Println(string(jsonConfig))
-	err = ioutil.WriteFile(fileName, jsonConfig, 0644)
+	err = ioutil.WriteFile(folder + "/" + fileName, jsonConfig, 0644)
 
 	if err != nil {
 		fmt.Printf("Error writing json into file. Err %v", err)
