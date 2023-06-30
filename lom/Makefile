@@ -16,6 +16,7 @@ BUILD_DIR := build
 LIB_DIR := $(BUILD_DIR)/lib
 BIN_DIR := $(BUILD_DIR)/bin
 TEST_DIR := $(BUILD_DIR)/test
+CONFIG_DIR :=  $(BUILD_DIR)/config
 
 # Set to -v for verbose o/p. May set it in Env before calling Make
 # export TEST_FLAG=-v in shell before calling make or
@@ -217,6 +218,19 @@ $(PLUGINS_COMMON_TEST): $(SRC_FILES) $(TEST_FILES)
 	fi
 	touch $@
 	@echo -e "Successfully completed plugins common Test\n\n"
+
+generate_config:
+	mkdir -p $(CONFIG_DIR)
+	cd $(CONFIG_DIR)
+	go build ../../src/lib/lomcommon/yang_parser/main.go
+	./main ../../src/lib/lomcommon/yang_parser/yang_prod_configs .
+	rm main
+	count=$$(ls|wc -l)
+	if [ $$count -eq 4 ]; then \
+            echo "Successfuly generated 4 config files";  \
+        else \
+            echo "Failed generating 4 json config files"; \
+        fi \
 
 clean: clean-extract_file_coverage clean-aggregate-file_coverage
 	rm -rf $(BUILD_DIR)
