@@ -2,11 +2,11 @@ package yang_utils
 
 import (
     "encoding/json"
+    "fmt"
+    "github.com/openconfig/goyang/pkg/yang"
+    "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
     "testing"
-    "fmt"
-    "github.com/stretchr/testify/assert"
-    "github.com/openconfig/goyang/pkg/yang"
 )
 
 func Test_GetMappingForAllYangConfig_GeneratesCorrectMapping(t *testing.T) {
@@ -90,15 +90,15 @@ func Test_GetMappingForAllYangConfig_GeneratesCorrectMapping(t *testing.T) {
 
 func Test_ProcessLeafElements_ReturnsErrorForInvalidValueTypes(t *testing.T) {
 
-	modules := []string{"globals-invalid-int64-type-value", "globals-invalid-boolean-type-value", "globals-invalid-float-type-value"}
-	paths := []string{"./yang_test_files/globals-invalid-int64-type-value.yang", "./yang_test_files/globals-invalid-boolean-type-value.yang", "./yang_test_files/globals-invalid-float-type-value.yang"}
+    modules := []string{"globals-invalid-int64-type-value", "globals-invalid-boolean-type-value", "globals-invalid-float-type-value", "globals-invalid-type-value"}
+    paths := []string{"./yang_test_files/globals-invalid-int64-type-value.yang", "./yang_test_files/globals-invalid-boolean-type-value.yang", "./yang_test_files/globals-invalid-float-type-value.yang", "./yang_test_files/globals-invalid-type-value.yang"}
 
-	for index := 0; index < len(modules); index++ {
-		globalsMapping, err := yang.GetModule(modules[index], paths[index])
-		str := fmt.Sprintf("No error expected %d", index)
-		assert.Equal(t, 0, len(err), str)
-		leafMap, er := ProcessLeafElements(globalsMapping.Dir)
-		assert.Equal(t, map[string]interface{}(nil), leafMap, fmt.Sprintf("Leafmap is expected to be nil for index %d", index))
-		assert.NotEqual(t, nil, er, fmt.Sprintf("Error expected for index %d", index))
-	}
+    for index := 0; index < len(modules); index++ {
+        globalsMapping, err := yang.GetModule(modules[index], paths[index])
+        str := fmt.Sprintf("No error expected %d", index)
+        assert.Equal(t, 0, len(err), str)
+        leafMap, er := ProcessLeafElements(globalsMapping.Dir)
+        assert.Equal(t, map[string]interface{}(nil), leafMap, fmt.Sprintf("Leafmap is expected to be nil for index %d", index))
+        assert.NotEqual(t, nil, er, fmt.Sprintf("Error expected for index %d", index))
+    }
 }
