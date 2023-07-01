@@ -146,4 +146,3 @@ func Test_GetMappingForGlobalsYangConfig_ReturnsErrorForInvalidLeaf(t *testing.T
     assert.Equal(t, map[string]interface{}(nil), mapping, "Expecting mapping to be nil for GetMappingForBindingsYangConfig")
     assert.NotEqual(t, nil, err, "Error is expected to be non nil for GetMappingForBindingsYangConfig")
 }
-
