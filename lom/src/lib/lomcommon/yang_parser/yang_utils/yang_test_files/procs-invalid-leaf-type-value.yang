@@ -1,0 +1,47 @@
+module procs-invalid-leaf-type-value {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/device-health-global-configs";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Procs configurations for Device health agent. Determines the plugins that needs to be handled by processes.";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+	container proc_0 {
+        container link_crc {
+            leaf name {
+                type string;
+                description "Link crc plugin";
+                default "link_crc";
+			    config true;
+            }
+
+            leaf version {
+                type string;
+                description "Version of link crc plugin";
+                default "1.0.0.0";
+			    config true;
+            }
+
+            leaf path {
+                type int64;
+                description "Path of the plugin";
+                default "abc";
+			    config true;
+            }
+        }
+    }
+}

@@ -1,0 +1,58 @@
+module actions-invalid-leaf-type-value1 {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/device-health-global-configs";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Action specific configurations for Device health agent plugins";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+    grouping detection-action-config-common {
+        leaf Type {
+            type string;
+            description "Indicates Detection plugin";
+            default "Detection";
+            config true;
+        }
+    }
+
+    container link_crc {
+        leaf Name {
+                type string;
+                description "link crc";
+                default "link_crc";
+                config true;
+        }
+
+        container ActionKnobs {
+            leaf DetectionFreqInSecs {
+                type int64;
+                description "Frequency at which detection algorithm is executed in seconds";
+                default 30;
+                config true;
+            }
+
+            leaf IfInErrorsDiffMinValue {
+                type int64;
+                description "Minimum Interface input Errors diff for the detection algorithm to be executed";
+                default "abc";
+                config true;
+            }
+        }
+
+        uses detection-action-config-common;
+    }
+}

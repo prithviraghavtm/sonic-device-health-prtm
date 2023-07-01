@@ -1,0 +1,57 @@
+module bindings-invalid-leaf-type-value {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/device-health-global-configs";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Binding configurations for Device health agent on Sonic OS";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+
+    container link_crc_bind-0 {
+        leaf SequenceName {
+                type string;
+                description "link crc";
+                default "link_crc_bind-0";
+                config true;
+        }
+
+        leaf Priority {
+                type int64;
+                description "Determines the priority of this sequence";
+                default "abc";
+                config true;
+        }
+
+        leaf Timeout {
+                type int64;
+                description "TODO";
+                default 2;
+                config true;
+        }
+
+        container Actions {
+            container seq0 {
+                leaf name {
+                    type string;
+                    description "link_crc action";
+                    default "link_crc";
+                    config true;
+                }
+            }
+        }
+    }
+}
