@@ -1,0 +1,29 @@
+module globals-invalid-file {
+
+    yang-version 1.1;
+
+    namespace "http://github.com/sonic-net/actions-sample-config-for-uts";
+
+    prefix dtm;
+
+    organization
+        "SONiC";
+
+    contact
+        "Device";
+
+    description
+        "Global configurations for Device health agent for UTs";
+
+    revision 2023-06-28 {
+        description
+            "Initial revision.";
+    }
+	
+    leafs MAX_SEQ_TIMEOUT_SECS {
+	type int64;
+	description "invalid int64 type value";
+	default 10;
+	config true;
+    }
+}

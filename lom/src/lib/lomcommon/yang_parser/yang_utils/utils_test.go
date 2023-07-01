@@ -102,3 +102,21 @@ func Test_ProcessLeafElements_ReturnsErrorForInvalidValueTypes(t *testing.T) {
         assert.NotEqual(t, nil, er, fmt.Sprintf("Error expected for index %d", index))
     }
 }
+
+func Test_YangParsers_ReturnErrorForInvalidYangFiles(t *testing.T) {
+	mapping, err := GetMappingForActionsYangConfig("globals-invalid-file", "./yang_test_files/globals-invalid-file.yang")
+	assert.Equal(t, map[string]interface{}(nil), mapping, fmt.Sprintf("mapping is expected to be nil for GetMappingForActionsYangConfig"))
+	assert.NotEqual(t, nil, err, fmt.Sprintf("Error is expected to be non nil for GetMappingForActionsYangConfig"))
+
+	mapping, err = GetMappingForBindingsYangConfig("globals-invalid-file", "./yang_test_files/globals-invalid-file.yang")
+	assert.Equal(t, map[string]interface{}(nil), mapping, fmt.Sprintf("mapping is expected to be nil for GetMappingForBindingsYangConfig"))
+	assert.NotEqual(t, nil, err, fmt.Sprintf("Error is expected to be non nil for GetMappingForBindingsYangConfig"))
+
+	mapping, err = GetMappingForGlobalsYangConfig("globals-invalid-file", "./yang_test_files/globals-invalid-file.yang")
+	assert.Equal(t, map[string]interface{}(nil), mapping, fmt.Sprintf("mapping is expected to be nil for GetMappingForGlobalsYangConfig"))
+	assert.NotEqual(t, nil, err, fmt.Sprintf("Error is expected to be non nil for GetMappingForGlobalsYangConfig"))
+
+	mapping, err = GetMappingForProcsYangConfig("globals-invalid-file", "./yang_test_files/globals-invalid-file.yang")
+	assert.Equal(t, map[string]interface{}(nil), mapping, fmt.Sprintf("mapping is expected to be nil for GetMappingForProcsYangConfig"))
+	assert.NotEqual(t, nil, err, fmt.Sprintf("Error is expected to be non nil for GetMappingForProcsYangConfig"))
+}
