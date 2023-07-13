@@ -23,15 +23,6 @@ class cfgInit:
     "flag_false": false,\
     "lst_6_7_8": [ 6, 7, 8 ]\
 }',
-        "actions.conf.json": '\
-{\
-        "Detect-0" : { "name": "Detect-0" },\
-        "Safety-chk-0" : { "name": "Safety-chk-0", "Timeout": 1},\
-        "Mitigate-0" : { "name": "Mitigate-0", "Timeout": 6},\
-        "Detect-1" : { "name": "Detect-1" },\
-        "Safety-chk-1" : { "name": "Safety-chk-1", "Timeout": 7},\
-        "Mitigate-1" : { "name": "Mitigate-1", "Timeout": 8}\
-}',
         "bindings.conf.json": '\
 {\
     "bindings": [\
@@ -98,11 +89,44 @@ class cfgInit:
 }'
         }
 
+    actionsData = {
+        "Detect-0.conf.json" : '\
+	{\
+	    "Detect-0" : { "name": "Detect-0" }\
+	}',
+        "Safety-chk-0.conf.json" : 	'\
+	{\
+	    "Safety-chk-0" : { "name": "Safety-chk-0", "Timeout": 1}\
+	}',
+        "Mitigate-0.conf.json" : 	'\
+	{\
+	    "Mitigate-0" : { "name": "Mitigate-0", "Timeout": 6}\
+	}',
+        "Detect-1.conf.json" : 	'\
+	{\
+	    "Detect-1" : { "name": "Detect-1" }\
+	}',
+        "Safety-chk-1.conf.json" : 	'\
+	{\
+	    "Safety-chk-1" : { "name": "Safety-chk-1", "Timeout": 7}\
+	}',
+        "Mitigate-1.conf.json" : 	'\
+	{\
+	    "Mitigate-1" : { "name": "Mitigate-1", "Timeout": 8}\
+	}'
+    } 
 
     def __init__(self, testMode: bool):
         for f, v in self.cfgData.items():
             with open(os.path.join(self.cfgPath, f), "w") as s:
                 s.write(v)
+
+        actions_path = os.path.join(self.cfgPath, "actions.confd")
+        os.makedirs(actions_path, exist_ok=True)
+
+        for actName, actData in self.actionsData.items():
+            with open(os.path.join(actions_path, actName), "w") as fl:
+                fl.write(actData)
 
         testModeFl = os.path.join(self.cfgPath, "LoMTestMode")
         if testMode:
