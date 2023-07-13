@@ -2123,17 +2123,17 @@ func Test_LoadAddPlugin(t *testing.T) {
     }
 
     cfgFiles := &lomcommon.ConfigFiles_t{
-        GlobalFl:   "../../lib/lib_test/config/globals.conf.json",
-	ActionsFl: []string{"../../lib/lib_test/config/actions.confd/dummy_action.conf.json",
-		"../../lib/lib_test/config/actions.confd/GenericPluginDetection.conf.json",
-		"../../lib/lib_test/config/actions.confd/link_flap.conf.json",
-		"../../lib/lib_test/config/actions.confd/plmgr_plugin_2.conf.json",
-		"../../lib/lib_test/config/actions.confd/plmgr_plugin_3.conf.json",
-		"../../lib/lib_test/config/actions.confd/test_plugin_001_bad.conf.json",
-		"../../lib/lib_test/config/actions.confd/test_plugin_001.conf.json",
-		"../../lib/lib_test/config/actions.confd/test_plugin_002.conf.json",
-		"../../lib/lib_test/config/actions.confd/test_startup_plugin_001.conf.json"},
-	BindingsFl: "../../lib/lib_test/config/bindings.conf.json",
+        GlobalFl: "../../lib/lib_test/config/globals.conf.json",
+        ActionsFl: []string{"../../lib/lib_test/config/actions.confd/dummy_action.conf.json",
+            "../../lib/lib_test/config/actions.confd/GenericPluginDetection.conf.json",
+            "../../lib/lib_test/config/actions.confd/link_flap.conf.json",
+            "../../lib/lib_test/config/actions.confd/plmgr_plugin_2.conf.json",
+            "../../lib/lib_test/config/actions.confd/plmgr_plugin_3.conf.json",
+            "../../lib/lib_test/config/actions.confd/test_plugin_001_bad.conf.json",
+            "../../lib/lib_test/config/actions.confd/test_plugin_001.conf.json",
+            "../../lib/lib_test/config/actions.confd/test_plugin_002.conf.json",
+            "../../lib/lib_test/config/actions.confd/test_startup_plugin_001.conf.json"},
+        BindingsFl: "../../lib/lib_test/config/bindings.conf.json",
         ProcsFl:    "../../lib/lib_test/config/procs.conf.json",
     }
     lomcommon.InitConfigMgr(cfgFiles)
