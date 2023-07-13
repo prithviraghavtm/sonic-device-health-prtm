@@ -1207,6 +1207,7 @@ func TestConfig(t *testing.T) {
 		if _, e := mgr.GetProcsConfig("zyy"); e == nil {
 			t.Errorf("Failed to fail for non existing proc cfg")
 		}
+		cleanConfigFiles()
 	}
 }
 
@@ -1307,6 +1308,8 @@ func TestPeriodic(t *testing.T) {
 			t.Errorf("GetLastError not nil after reset. read(%v)", e)
 		}
 	}
+
+	cleanConfigFiles()
 }
 
 func TestOneShot(t *testing.T) {

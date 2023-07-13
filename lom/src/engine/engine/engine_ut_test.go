@@ -750,4 +750,5 @@ func TestAll(t *testing.T) {
     for _, f := range utList {
         f(t)
     }
+    cleanConfigFiles()
 }

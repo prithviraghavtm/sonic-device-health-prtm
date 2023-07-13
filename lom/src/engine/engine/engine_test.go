@@ -1228,3 +1228,16 @@ func TestRun(t *testing.T) {
     chEnd <- 0
     engine.close() /* Close the engine */
 }
+
+func cleanConfigFiles() {
+    for _, v := range []string{GLOBALS_CONF_FILE,
+        BINDINGS_CONF_FILE, PROCS_CONF_FILE} {
+        fl := filepath.Join("/tmp/", v)
+        if _, err := os.Stat(fl); err == nil {
+            os.Remove(fl)
+        }
+    }
+
+    // Remove actions conf directory.
+    os.RemoveAll("/tmp/" + ACTIONS_CONF_FOLDER)
+}
