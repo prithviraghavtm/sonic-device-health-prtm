@@ -892,7 +892,7 @@ var testConfigData = []ConfigData_t{
 	},
 	{
 		`{}`,
-		map[string]string{"act1.conf.json": `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`},
+		map[string]string{"xxx.conf.json": `{"xxx": {"name": "xxx"}}`, "yyy.conf.json": `{"yyy": { "name": "yyy" }}`},
 		`{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 0 }, {"name": "yyy"}] } ] }`,
 		`{}`,
 		true,
@@ -900,7 +900,7 @@ var testConfigData = []ConfigData_t{
 	},
 	{
 		`{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-		map[string]string{"act1.conf.json": `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`},
+		map[string]string{"xxx.conf.json": `{"xxx": {"name": "xxx"}}`, "yyy.conf.json": `{"yyy": { "name": "yyy" }}`},
 		`{ "bindings": [ { "name": "Test", "actions": [ ] } ] }`,
 		`{}`,
 		true,
@@ -908,7 +908,7 @@ var testConfigData = []ConfigData_t{
 	},
 	{
 		`{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-		map[string]string{"act1.conf.json": `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`},
+		map[string]string{"xxx.conf.json": `{"xxx": {"name": "xxx"}}`, "yyy.conf.json": `{"yyy": { "name": "yyy" }}`},
 		`{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 1 }, {"name": "yyy"}] } ] }`,
 		`{}`,
 		false,
@@ -916,7 +916,7 @@ var testConfigData = []ConfigData_t{
 	},
 	{
 		`{ "foo": "bar", "ENGINE_HB_INTERVAL_SECS": 11, "list": [ "hello", "world" ], "MAX_SEQ_TIMEOUT_SECS":"77"}`,
-		map[string]string{"act1.conf.json": `{"xxx": {"name": "xxx"}, "yyy": { "name": "yyy" }}`},
+		map[string]string{"xxx.conf.json": `{"xxx": {"name": "xxx"}}`, "yyy.conf.json": `{"yyy": { "name": "yyy" }}`},
 		`{ "bindings": [ { "name": "Test", "actions": [ {"name": "xxx", "sequence": 1 }, {"name": "yyy"}] } ] }`,
 		`{ "procs": { "proc_0": { "Detect-0": { "name": "Detect-0", "version": "00.01.1", "path": " /path/" }}, "proc_1": { "Mitigate-0": { "name": "Mitigate-0", "version": "02_1", "path": " /path/" }}}}`,
 		false,
