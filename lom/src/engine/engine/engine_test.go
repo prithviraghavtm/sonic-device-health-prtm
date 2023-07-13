@@ -97,19 +97,19 @@ var procs_conf = `{}`
 /*
  *  Actions.conf
  */
-var actions_conf = `{
-        "Detect-0" : { "name": "Detect-0" },
-        "Safety-chk-0" : { "name": "Safety-chk-0", "Timeout": 1},
-        "Mitigate-0" : { "name": "Mitigate-0", "Timeout": 6},
-        "Detect-1" : { "name": "Detect-1" },
-        "Safety-chk-1" : { "name": "Safety-chk-1", "Timeout": 7},
-        "Mitigate-1" : { "name": "Mitigate-1", "Timeout": 8},
-        "Detect-2" : { "name": "Detect-2" },
-        "Safety-chk-2" : { "name": "Safety-chk-2", "Timeout": 1},
-        "Mitigate-2" : { "name": "Mitigate-2", "Timeout": 6},
-        "Disabled-0" : { "name": "Disabled-0", "Disable": true},
-        "Detect-3" : { "name": "Detect-3" }
-        }`
+var actions_conf = map[string]string{
+	"Detect-0.conf.json":     `{"Detect-0" : { "name": "Detect-0" }}`,
+	"Safety-chk-0.conf.json": `{"Safety-chk-0" : { "name": "Safety-chk-0", "Timeout": 1}}`,
+	"Mitigate-0.conf.json":   `{"Mitigate-0" : { "name": "Mitigate-0", "Timeout": 6}}`,
+	"Detect-1.conf.json":     `{"Detect-1" : { "name": "Detect-1" }}`,
+	"Safety-chk-1.conf.json": `{"Safety-chk-1" : { "name": "Safety-chk-1", "Timeout": 7}}`,
+	"Mitigate-1.conf.json":   `{"Mitigate-1" : { "name": "Mitigate-1", "Timeout": 8}}`,
+	"Detect-2.conf.json":     `{"Detect-2" : { "name": "Detect-2" }}`,
+	"Safety-chk-2.conf.json": `{"Safety-chk-2" : { "name": "Safety-chk-2", "Timeout": 1}}`,
+	"Mitigate-2.conf.json":   `{"Mitigate-2" : { "name": "Mitigate-2", "Timeout": 6}}`,
+	"Disabled-0.conf.json":   `{"Disabled-0" : { "name": "Disabled-0", "Disable": true}}`,
+	"Detect-3.conf.json":     `{"Detect-3" : { "name": "Detect-3" }}`,
+}
 
 var bindings_conf = `{ "bindings": [
     {
@@ -249,20 +249,34 @@ func testPublish(s string) string {
 const CFGPATH = "/tmp"
 
 /* Helper API */
-func createFile(t *testing.T, name string, s string) {
-    fl := filepath.Join(CFGPATH, name)
+func createFile(t *testing.T, name string, s string, isActionConfFile bool) {
+	fl := filepath.Join(CFGPATH, name)
 
-    if len(s) == 0 {
-        s = "{}"
-    }
-    if f, err := os.Create(fl); err != nil {
-        t.Fatalf("Failed to create file (%s)", fl)
-    } else {
-        if _, err := f.WriteString(s); err != nil {
-            t.Fatalf("Failed to write file (%s)", fl)
-        }
-        f.Close()
-    }
+	if isActionConfFile {
+		actionsFolderName := CFGPATH + "/" + ACTIONS_CONF_FOLDER
+		if err := os.MkdirAll(actionsFolderName, os.ModePerm); err != nil {
+			t.Fatalf("Failed to create folder for action configs")
+		}
+		fl = actionsFolderName + "/" + name
+	}
+
+	if len(s) == 0 {
+		s = "{}"
+	}
+	if f, err := os.Create(fl); err != nil {
+		t.Fatalf("Failed to create file (%s)", fl)
+	} else {
+		if _, err := f.WriteString(s); err != nil {
+			t.Fatalf("Failed to write file (%s)", fl)
+		}
+		f.Close()
+	}
+}
+
+func createActionFiles(t *testing.T, fileNameToDataMapping map[string]string) {
+	for fileName, fileData := range fileNameToDataMapping {
+		createFile(t, fileName, fileData, true)
+	}
 }
 
 /*
@@ -1172,10 +1186,10 @@ var initConfigDone = false
 
 func initConfig(t *testing.T) {
     if !initConfigDone {
-        createFile(t, "globals.conf.json", globals_conf)
-        createFile(t, "actions.conf.json", actions_conf)
-        createFile(t, "procs.conf.json", procs_conf)
-        createFile(t, "bindings.conf.json", bindings_conf)
+        createFile(t, "globals.conf.json", globals_conf, false)
+        createActionFiles(t, actions_conf)
+        createFile(t, "procs.conf.json", procs_conf, false)
+        createFile(t, "bindings.conf.json", bindings_conf, false)
 
         initConfigDone = true
     }
