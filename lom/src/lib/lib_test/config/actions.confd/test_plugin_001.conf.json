@@ -1,0 +1,11 @@
+{
+    "test_plugin_001": {
+		"Name": "test_plugin_001",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"Act,ionKnobs": "test actions"
+	}
+}

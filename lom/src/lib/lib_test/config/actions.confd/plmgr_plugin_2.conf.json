@@ -1,0 +1,11 @@
+{
+    "plmgr_plugin_2": {
+		"Name": "plmgr_plugin_2",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": true,
+		"Mimic": false,
+		"Act,ionKnobs": "test actions"
+	}
+}

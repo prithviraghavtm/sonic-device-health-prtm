@@ -1,0 +1,11 @@
+{
+    "dummy_action": {
+		"Name": "dummy_action",
+		"Type": "dummy_type",
+		"Timeout": 10,
+		"HeartbeatInt": 5,
+		"Disable": false,
+		"Mimic": false,
+		"ActionKnobs": "test actions"
+	}
+}

@@ -1,0 +1,11 @@
+{
+    "link_flap": {
+		"Name": "link_flap",
+		"Type": "Detection",
+		"Timeout": 0,
+		"HeartbeatInt": 2,
+		"Disable": false,
+		"Mimic": true,
+		"ActionKnobs": "test actions"
+	}
+}

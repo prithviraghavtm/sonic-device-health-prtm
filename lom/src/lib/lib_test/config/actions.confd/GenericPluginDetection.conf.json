@@ -1,0 +1,11 @@
+{
+    "GenericPluginDetection": {
+		"Name": "GenericPluginDetection",
+		"Type": "Detection",
+		"Timeout": 0,
+		"HeartbeatInt": 2,
+		"Disable": false,
+		"Mimic": true,
+		"ActionKnobs": "test actions"
+	}
+}
