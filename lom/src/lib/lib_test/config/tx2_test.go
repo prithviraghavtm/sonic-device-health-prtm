@@ -429,8 +429,16 @@ func TestReadProcsConf(t *testing.T) {
         configFiles := &lomcommon.ConfigFiles_t{}
         configFiles.ProcsFl = "/tmp/test.json"
         configFiles.GlobalFl = "./globals.conf.json"
-        configFiles.ActionsFl = "./actions.conf.json"
-        configFiles.BindingsFl = "./bindings.conf.json"
+	configFiles.ActionsFl = []string{"./actions.confd/dummy_action.conf.json",
+		"./actions.confd/GenericPluginDetection.conf.json",
+		"./actions.confd/link_flap.conf.json",
+		"./actions.confd/plmgr_plugin_2.conf.json",
+		"./actions.confd/plmgr_plugin_3.conf.json",
+		"./actions.confd/test_plugin_001_bad.conf.json",
+		"./actions.confd/test_plugin_001.conf.json",
+		"./actions.confd/test_plugin_002.conf.json",
+		"./actions.confd/test_startup_plugin_001.conf.json"}
+	configFiles.BindingsFl = "./bindings.conf.json"
         _, err = lomcommon.InitConfigMgr(configFiles)
 
         assert.NotNil(t, err)
@@ -449,7 +457,15 @@ func TestReadProcsConf(t *testing.T) {
         configFiles := &lomcommon.ConfigFiles_t{}
         configFiles.ProcsFl = "./procs.conf.json"
         configFiles.GlobalFl = "./globals.conf.json"
-        configFiles.ActionsFl = "./actions.conf.json"
+        configFiles.ActionsFl = []string{"./actions.confd/dummy_action.conf.json",
+                "./actions.confd/GenericPluginDetection.conf.json",
+                "./actions.confd/link_flap.conf.json",
+                "./actions.confd/plmgr_plugin_2.conf.json",
+                "./actions.confd/plmgr_plugin_3.conf.json",
+                "./actions.confd/test_plugin_001_bad.conf.json",
+                "./actions.confd/test_plugin_001.conf.json",
+                "./actions.confd/test_plugin_002.conf.json",
+                "./actions.confd/test_startup_plugin_001.conf.json"}
         configFiles.BindingsFl = "./bindings.conf.json"
         configMgr, err := lomcommon.InitConfigMgr(configFiles)
 
@@ -464,7 +480,15 @@ func TestReadProcsConf(t *testing.T) {
         configFiles := &lomcommon.ConfigFiles_t{}
         configFiles.ProcsFl = "./procs.conf.json"
         configFiles.GlobalFl = "./globals.conf.json"
-        configFiles.ActionsFl = "./actions.conf.json"
+        configFiles.ActionsFl = []string{"./actions.confd/dummy_action.conf.json",
+                "./actions.confd/GenericPluginDetection.conf.json",
+                "./actions.confd/link_flap.conf.json",
+                "./actions.confd/plmgr_plugin_2.conf.json",
+                "./actions.confd/plmgr_plugin_3.conf.json",
+                "./actions.confd/test_plugin_001_bad.conf.json",
+                "./actions.confd/test_plugin_001.conf.json",
+                "./actions.confd/test_plugin_002.conf.json",
+                "./actions.confd/test_startup_plugin_001.conf.json"}
         configFiles.BindingsFl = "./bindings.conf.json"
 
         configMgr, err := lomcommon.InitConfigMgr(configFiles)
