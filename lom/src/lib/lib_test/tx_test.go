@@ -1015,7 +1015,11 @@ func createFile(name string, s string, isActionConfFile bool) (string, error) {
 	}
 	fl = "/tmp/" + name
 	if isActionConfFile {
-		fl = "/tmp/" + ACTIONS_CONF_FOLDER + "/" + name
+		actionsFolderName := "/tmp/" + ACTIONS_CONF_FOLDER
+		if err := os.MkdirAll(actionsFolderName, os.ModePerm); err != nil {
+			return "", err
+		}
+		fl = actionsFolderName + "/" + name
 	}
 	if f, err := os.Create(fl); err != nil {
 		return "", err
