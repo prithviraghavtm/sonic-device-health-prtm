@@ -27,7 +27,7 @@ const (
 
 const (
 	GLOBALS_CONF_FILE   = "globals.conf.json"
-	ACTIONS_CONF_FOLDER = "Actions"
+	ACTIONS_CONF_FOLDER = "actions.confd"
 	BINDINGS_CONF_FILE  = "bindings.conf.json"
 	PROCS_CONF_FILE     = "procs.conf.json"
 )
