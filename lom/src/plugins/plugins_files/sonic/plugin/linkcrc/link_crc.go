@@ -3,7 +3,6 @@ package linkcrc
 
 import (
     "context"
-    "encoding/json"
     "fmt"
     "lom/src/lib/lomcommon"
     "lom/src/lib/lomipc"
@@ -14,36 +13,19 @@ import (
 )
 
 const (
-    /* Default values to be used for the detection, in case configuration does not set it */
-    detection_freq_in_secs_default        = 30
-    if_in_errors_diff_min_value_default   = 0
-    in_unicast_packets_min_value_default  = 100
-    out_unicast_packets_min_value_default = 100
-    outlier_rolling_window_size_default   = 5
-    min_crc_error_default                 = 0.000001
-    min_outliers_for_detection_default    = 2
-    look_back_period_in_secs_default      = 125
+    /* Values to be used for the detection */
+    detection_freq_in_secs        = 30
+    if_in_errors_diff_min_value   = 0
+    in_unicast_packets_min_value  = 100
+    out_unicast_packets_min_value = 100
+    outlier_rolling_window_size   = 5
+    min_crc_error                 = 0.000001
+    min_outliers_for_detection    = 2
+    look_back_period_in_secs      = 125
 
-    /* Config Keys for accessing cfg file */
-    detection_freq_in_secs_config_key        = "DetectionFreqInSecs"
-    if_in_errors_diff_min_value_config_key   = "IfInErrorsDiffMinValue"
-    in_unicast_packets_min_value_config_key  = "InUnicastPacketsMinValue"
-    out_unicast_packets_min_value_config_key = "OutUnicastPacketsMinValue"
-    outlier_rolling_window_size_config_key   = "OutlierRollingWindowSize"
-    min_crc_error_config_key                 = "MinCrcError"
-    min_outliers_for_detection_config_key    = "MinOutliersForDetection"
-    look_back_period_in_secs_config_key      = "LookBackPeriodInSecs"
     link_crc_plugin_version                  = "1.0.0.0"
     link_crc_prefix                          = "link_crc: "
 )
-
-var ifInErrorsDiffMinValue int
-var inUnicastPacketsMinValue int
-var outUnicastPacketsMinValue int
-var outlierRollingWindowSize int
-var minCrcError float64
-var minOutliersForDetection int
-var lookBackPeriodInSecs int
 
 type LinkCRCDetectionPlugin struct {
     counterRepository          dbclient.CounterRepositoryInterface
@@ -66,35 +48,12 @@ func init() {
 /* Inheritied from Plugin */
 func (linkCrcDetectionPlugin *LinkCRCDetectionPlugin) Init(actionConfig *lomcommon.ActionCfg_t) error {
     lomcommon.LogInfo("Started Init() for (%s)", "link_crc")
-    // Get config settings or assign default values.
-    var resultMap map[string]interface{}
-    jsonErr := json.Unmarshal([]byte(actionConfig.ActionKnobs), &resultMap)
-    var detectionFreqInSecs int
-    if jsonErr == nil {
-        detectionFreqInSecs = int(lomcommon.GetFloatConfigFromMapping(resultMap, detection_freq_in_secs_config_key, detection_freq_in_secs_default))
-        ifInErrorsDiffMinValue = int(lomcommon.GetFloatConfigFromMapping(resultMap, if_in_errors_diff_min_value_config_key, if_in_errors_diff_min_value_default))
-        inUnicastPacketsMinValue = int(lomcommon.GetFloatConfigFromMapping(resultMap, in_unicast_packets_min_value_config_key, in_unicast_packets_min_value_default))
-        outUnicastPacketsMinValue = int(lomcommon.GetFloatConfigFromMapping(resultMap, out_unicast_packets_min_value_config_key, out_unicast_packets_min_value_default))
-        outlierRollingWindowSize = int(lomcommon.GetFloatConfigFromMapping(resultMap, outlier_rolling_window_size_config_key, outlier_rolling_window_size_default))
-        minCrcError = lomcommon.GetFloatConfigFromMapping(resultMap, min_crc_error_config_key, min_crc_error_default)
-        minOutliersForDetection = int(lomcommon.GetFloatConfigFromMapping(resultMap, min_outliers_for_detection_config_key, min_outliers_for_detection_default))
-        lookBackPeriodInSecs = int(lomcommon.GetFloatConfigFromMapping(resultMap, look_back_period_in_secs_config_key, look_back_period_in_secs_default))
-    } else {
-        detectionFreqInSecs = detection_freq_in_secs_default
-        ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
-        inUnicastPacketsMinValue = in_unicast_packets_min_value_default
-        outUnicastPacketsMinValue = out_unicast_packets_min_value_default
-        outlierRollingWindowSize = outlier_rolling_window_size_default
-        minCrcError = min_crc_error_default
-        minOutliersForDetection = min_outliers_for_detection_default
-        lookBackPeriodInSecs = look_back_period_in_secs_default
-    }
 
     // Initialize values.
     linkCrcDetectionPlugin.counterRepository = &dbclient.CounterRepository{RedisProvider: &dbclient.RedisProvider{}}
     linkCrcDetectionPlugin.currentMonitoredInterfaces = map[string]LinkCrcDetectorInterface{}
     linkCrcDetectionPlugin.reportingFreqLimiter = plugins_common.GetDefaultDetectionFrequencyLimiter()
-    err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detectionFreqInSecs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
+    err := linkCrcDetectionPlugin.PeriodicDetectionPluginUtil.Init(actionConfig.Name, detection_freq_in_secs, actionConfig, linkCrcDetectionPlugin.executeCrcDetection, linkCrcDetectionPlugin.executeShutdown)
     if err != nil {
         lomcommon.LogError(fmt.Sprintf(link_crc_prefix+"Plugin initialization failed. (%s), err: (%v)", actionConfig.Name, err))
         return err
@@ -200,7 +159,7 @@ type RollingWindowLinkCrcDetector struct {
 func (linkCrcDetector *RollingWindowLinkCrcDetector) Initialize(interfaceName string) {
     linkCrcDetector.interfaceName = interfaceName
     linkCrcDetector.outlierRollingWindow = plugins_common.FixedSizeRollingWindow[CrcOutlierInfo]{}
-    linkCrcDetector.outlierRollingWindow.Initialize(outlierRollingWindowSize)
+    linkCrcDetector.outlierRollingWindow.Initialize(outlier_rolling_window_size)
 }
 
 /* Adds CRC based interface counters, computes outlier and detects CRC utilizing the rollowing window outlier details */
@@ -230,9 +189,9 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
     outUnicastPacketsDiff := currentCounters[dbclient.OUT_UNICAST_PACKETS_COUNTER_KEY] - linkCrcDetector.latestCounters[dbclient.OUT_UNICAST_PACKETS_COUNTER_KEY]
 
     // Start evaluating the outliers and detect CRC anomaly.
-    if ifInErrorsDiff > uint64(ifInErrorsDiffMinValue) && (inUnicastPacketsDiff > uint64(inUnicastPacketsMinValue) || outUnicastPacketsDiff > uint64(outUnicastPacketsMinValue)) {
+    if ifInErrorsDiff > uint64(if_in_errors_diff_min_value) && (inUnicastPacketsDiff > uint64(in_unicast_packets_min_value) || outUnicastPacketsDiff > uint64(out_unicast_packets_min_value)) {
         errorMetric := float64(ifInErrorsDiff) / (float64(inUnicastPacketsDiff) + float64(ifInErrorsDiff))
-        if errorMetric > minCrcError {
+        if errorMetric > min_crc_error {
             if inUnicastPacketsDiff > 0 {
                 totalLinkErrors := ifInErrorsDiff - ifOutErrorsDiff
                 fcsErrorRate := float64(totalLinkErrors) / float64(inUnicastPacketsDiff)
@@ -247,9 +206,9 @@ func (linkCrcDetector *RollingWindowLinkCrcDetector) AddInterfaceCountersAndDete
                     crcOutliers := linkCrcDetector.outlierRollingWindow.GetElements()
                     for iterator := crcOutliers.Back(); iterator != nil; iterator = iterator.Prev() {
                         outlier := iterator.Value.(CrcOutlierInfo)
-                        if localTimeStampUtc.Sub(outlier.TimeStamp).Seconds() < float64(lookBackPeriodInSecs) {
+                        if localTimeStampUtc.Sub(outlier.TimeStamp).Seconds() < float64(look_back_period_in_secs) {
                             outliersCount = outliersCount + 1
-                            if outliersCount == minOutliersForDetection {
+                            if outliersCount == min_outliers_for_detection {
                                 return true
                             }
                         } else {
