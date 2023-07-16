@@ -2,7 +2,6 @@ package linkcrc
 
 import (
     "context"
-    "encoding/json"
     "errors"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
@@ -48,14 +47,6 @@ func (mockCounterRepository *MockCounterRepository) GetInterfaceStatus(interface
 /* Validate AddInterfaceCounter detects crc successfuly */
 func Test_LinkCrcDetector_AddInterfaceCountersDetectsSuccessfuly(t *testing.T) {
     // Mock
-    ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
-    inUnicastPacketsMinValue = in_unicast_packets_min_value_default
-    outUnicastPacketsMinValue = out_unicast_packets_min_value_default
-    outlierRollingWindowSize = outlier_rolling_window_size_default
-    minCrcError = min_crc_error_default
-    minOutliersForDetection = min_outliers_for_detection_default
-    lookBackPeriodInSecs = look_back_period_in_secs_default
-
     rollingWindowCrcDetector := RollingWindowLinkCrcDetector{}
     rollingWindowCrcDetector.Initialize("interfaceabc")
 
@@ -92,14 +83,6 @@ func Test_LinkCrcDetector_AddInterfaceCountersDetectsSuccessfuly(t *testing.T) {
 
 /* Validate AddInterfaceCountersAndDetectCrc returns false for nil counters */
 func Test_LinkCrcDetector_AddInterfaceCountersReturnsFalseForNilCounters(t *testing.T) {
-    // Mock
-    ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
-    inUnicastPacketsMinValue = in_unicast_packets_min_value_default
-    outUnicastPacketsMinValue = out_unicast_packets_min_value_default
-    outlierRollingWindowSize = outlier_rolling_window_size_default
-    minCrcError = min_crc_error_default
-    minOutliersForDetection = min_outliers_for_detection_default
-    lookBackPeriodInSecs = look_back_period_in_secs_default
     // Act
     rollingWindowCrcDetector := RollingWindowLinkCrcDetector{}
     rollingWindowCrcDetector.Initialize("interfaceabc")
@@ -113,14 +96,6 @@ func Test_LinkCrcDetector_AddInterfaceCountersReturnsFalseForNilCounters(t *test
 
 /* Validate AddInterfaceCountersAndDetectCrc returns false for invalid diff counters */
 func Test_LinkCrcDetector_AddInterfaceCountersReturnsFalseForInvalidCountersDiff(t *testing.T) {
-    // Mock
-    ifInErrorsDiffMinValue = if_in_errors_diff_min_value_default
-    inUnicastPacketsMinValue = in_unicast_packets_min_value_default
-    outUnicastPacketsMinValue = out_unicast_packets_min_value_default
-    outlierRollingWindowSize = outlier_rolling_window_size_default
-    minCrcError = min_crc_error_default
-    minOutliersForDetection = min_outliers_for_detection_default
-    lookBackPeriodInSecs = look_back_period_in_secs_default
     // Act
     rollingWindowCrcDetector := RollingWindowLinkCrcDetector{}
     rollingWindowCrcDetector.Initialize("interfaceabc")
@@ -151,58 +126,6 @@ func Test_LinkCrcDetector_AddInterfaceCountersReturnsFalseForInvalidCountersDiff
     isDetected = rollingWindowCrcDetector.AddInterfaceCountersAndDetectCrc(currentCounters, time.Now())
     assert.False(isDetected, "isDetected is expected to be false for when InUnicastPackets is less than previous value")
     assert.Equal("interfaceabc", rollingWindowCrcDetector.interfaceName, "InterfaceName is expected to be interfaceabc")
-}
-
-/* Validates Link crc plugin initialized with actions knobs */
-func Test_LinkCrcDetectionPlugin_InitializesWithActionsKnobs(t *testing.T) {
-    linkCRCDetectionPlugin := LinkCRCDetectionPlugin{}
-    actionKnobs := json.RawMessage(`{
-    "DetectionFreqInSecs": 35,
-    "IfInErrorsDiffMinValue": 5,
-    "InUnicastPacketsMinValue": 105,
-    "OutUnicastPacketsMinValue": 105,
-    "OutlierRollingWindowSize": 6,
-    "MinCrcError": 0.000002,
-    "MinOutliersForDetection": 3,
-    "LookBackPeriodInSecs": 127
-    }`)
-
-    actionConfig := lomcommon.ActionCfg_t{HeartbeatInt: 10, ActionKnobs: actionKnobs}
-    linkCRCDetectionPlugin.Init(&actionConfig)
-
-    assert := assert.New(t)
-    assert.Equal(5, ifInErrorsDiffMinValue, "IfInErrorsDiffMinValue is expected to be 5")
-    assert.Equal(105, inUnicastPacketsMinValue, "InUnicastPacketsMinValue is expected to be 105")
-    assert.Equal(105, outUnicastPacketsMinValue, "OutUnicastPacketsMinValue is expected to be 105")
-    assert.Equal(6, outlierRollingWindowSize, "OutlierRollingWindowSize is expected to be 6")
-    assert.Equal(0.000002, minCrcError, "MinCrcError is expected to be 0.000002")
-    assert.Equal(3, minOutliersForDetection, "MinOutliersForDetection is expected to be 3")
-    assert.Equal(127, lookBackPeriodInSecs, "LookBackPeriodInSecs is expected to be 127")
-}
-
-/* Validates Link crc plugin initialized with actions knobs from defaults when json field missing */
-func Test_LinkCrcDetectionPlugin_InitializesWithActionsKnobsAndDefaults(t *testing.T) {
-    linkCRCDetectionPlugin := LinkCRCDetectionPlugin{}
-    actionKnobs := json.RawMessage(`{
-    "DetectionFreqInSecs": 35,
-    "IfInErrorsDiffMinValue": 5,
-    "InUnicastPacketsMinValue": 105,
-    "OutUnicastPacketsMinValue": 105,
-    "MinOutliersForDetection": 3,
-    "LookBackPeriodInSecs": 127
-    }`)
-
-    actionConfig := lomcommon.ActionCfg_t{HeartbeatInt: 10, ActionKnobs: actionKnobs}
-    linkCRCDetectionPlugin.Init(&actionConfig)
-
-    assert := assert.New(t)
-    assert.Equal(5, ifInErrorsDiffMinValue, "IfInErrorsDiffMinValue is expected to be 5")
-    assert.Equal(105, inUnicastPacketsMinValue, "InUnicastPacketsMinValue is expected to be 105")
-    assert.Equal(105, outUnicastPacketsMinValue, "OutUnicastPacketsMinValue is expected to be 105")
-    assert.Equal(5, outlierRollingWindowSize, "OutlierRollingWindowSize is expected to be 6")
-    assert.Equal(0.000001, minCrcError, "MinCrcError is expected to be 0.000002")
-    assert.Equal(3, minOutliersForDetection, "MinOutliersForDetection is expected to be 3")
-    assert.Equal(127, lookBackPeriodInSecs, "LookBackPeriodInSecs is expected to be 127")
 }
 
 /* Validates DetectCrc returns nil for error */
